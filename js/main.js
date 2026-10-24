@@ -10,6 +10,7 @@ import { makeBook, coverCanvases, texOf, BW, BD, PG } from './book.js';
 import { cutMesh, particles } from './cutmesh.js';
 import { makePost, resizePost } from './post.js';
 import { drawCaptions, drawBubbles } from './hud.js';
+import { SPREADS as WORDS } from './story.js';
 
 const MOBILE = matchMedia('(pointer: coarse)').matches || innerWidth < 700;
 const DPR = Math.min(devicePixelRatio || 1, MOBILE ? 1.5 : 2);
@@ -30,14 +31,81 @@ const cam = new THREE.PerspectiveCamera(30, 16 / 9, .004, 30);
 let W = 2, H = 2;
 const post = makePost(renderer, scene, cam, W, H, MOBILE ? 24 : 48);
 
-// ---------- loading ----------
+// ---------- timeline: where each spread sits in the scroll ----------
+const OPEN_END = .035;
+const LEN = [.13, .13, .13, .13, .13, .11, .205];
+const START = []; { let a = OPEN_END; for (const l of LEN) { START.push(a); a += l; } }
+const local = (p, k) => (p - START[k]) / LEN[k];
+const G = (k, l) => START[k] + l * LEN[k];
+const spreadAt = p => { let k = 0; while (k < 6 && p >= START[k + 1]) k++; return k; };
+
+// ---------- the spreads ----------
+// piece: { a: asset, w: width (m), x, z, lean?, win?: [rise, fold] (local), walk?, on?: [hostId, height fraction], sink?, head?: [[who, dx, dy]] }
+const SP = [
+  { sky: 'sky', ground: 'meadow', sun: ['#fff3e0', 2.6], pieces: [
+    { a: 's1-backdrop-willows', w: .43, x: 0, z: .012 },
+    { a: 's1-river', w: .43, x: 0, z: .07 },
+    { a: 's1-swan-1', w: .055, x: -.12, z: .082, glide: .05 },
+    { a: 's1-swan-2', w: .065, x: .03, z: .092, glide: -.04 },
+    { a: 's1-swan-3', w: .058, x: .14, z: .086, glide: .035 },
+    { a: 'pose-teens', w: .1, x: -.01, z: .17, head: [['miggy', -.2, .98], ['kayiu', .12, .9]] },
+    { a: 's1-grass-ginkgo-branch', w: .44, x: 0, z: .275, lean: -1, sway: .004 },
+  ], eye: [[.05, .115, .45, 0, .062, .15], [-.04, .118, .45, 0, .062, .15]] },
+  { sky: 'santorini', ground: 'stone', sun: ['#fff0d6', 2.5], pieces: [
+    { a: 's2-backdrop-sea', w: .43, x: 0, z: .012 },
+    { a: 's2-far-houses', w: .28, x: .08, z: .05 },
+    { a: 's2-mid-dome', w: .21, x: -.1, z: .11 },
+    { a: 's2-near-path', w: .3, x: .05, z: .19 },
+    { a: 'pose-santorini-side', w: .1, x: -.14, z: .235, walk: { l0: .2, l1: .76, x0: -.15, x1: .1 }, head: [['miggy', -.2, .98], ['kayiu', .2, .9]] },
+  ], eye: [[-.12, .115, .5, -.1, .07, .19], [.11, .115, .5, .09, .07, .19]] },
+  { sky: 'venice', ground: 'water', sun: ['#fff1e0', 2.4], pieces: [
+    { a: 's3-backdrop-canal', w: .43, x: 0, z: .012 },
+    { a: 's3-gondola', w: .12, x: .2, z: .085, walk: { l0: .15, l1: .8, x0: .24, x1: -.24 } },
+    { a: 's3-bridge', w: .26, x: 0, z: .1, id: 'bridge' },
+    { a: 'pose-venice-side', w: .07, x: 0, z: .102, on: ['bridge', .78], head: [['kayiu', -.2, .9], ['miggy', .22, .98]] },
+    { a: 's3-near-arch-left', w: .14, x: -.16, z: .27 },
+    { a: 's3-near-arch-right', w: .1, x: .17, z: .27 },
+  ], eye: [[.06, .15, .47, 0, .115, .1], [-.05, .145, .45, 0, .11, .1]] },
+  { sky: 'catbells', ground: 'fell', sun: ['#fff6e8', 2.7], pieces: [
+    { a: 's4-backdrop-ridge', w: .43, x: 0, z: .012 },
+    ...[[1, -.17, .07], [2, -.1, .12], [3, .12, .08], [4, .17, .14], [5, -.15, .17], [6, .08, .12], [7, -.04, .09], [8, .15, .2], [9, -.19, .23], [10, .02, .15], [11, .19, .25]]
+      .map(([i, x, z]) => ({ a: `s4-hiker-${String(i).padStart(2, '0')}`, w: .032, x, z })),
+    { a: 'char-miggy-catbells', w: .022, x: -.04, z: .205, id: 'miggycb', head: [['miggy', 0, .97]] },
+    { a: 'char-kayiu-catbells', w: .035, x: .035, z: .205, head: [['kayiu', -.15, .97]] },
+    { a: 's4-bubble', w: .045, x: -.07, z: .206, on: ['miggycb', 1.02], win: [.3, .46] },
+  ], eye: [[-.08, .11, .47, -.02, .065, .17], [.06, .1, .45, .01, .062, .19]] },
+  { sky: 'golden', ground: 'lake', sun: ['#ffc27a', 2.2], pieces: [
+    { a: 's5-backdrop-lake', w: .43, x: 0, z: .012 },
+    { a: 's5-island', w: .2, x: .09, z: .07 },
+    { a: 'pose-proposal', w: .11, x: -.02, z: .19, head: [['miggy', -.22, .72], ['kayiu', .28, .98]] },
+    { a: 's5-shore', w: .3, x: 0, z: .28, lean: -1.0, sink: .32 },
+  ], eye: [[.05, .13, .47, -.01, .065, .16], [-.04, .125, .45, 0, .062, .17]] },
+  { sky: 'home', ground: 'floor', sun: ['#fff3e0', 2.3], pieces: [
+    { a: 's6-calendar-2022', w: .1, x: -.06, z: .15, id: 'cal' },
+    ...[2023, 2024, 2025, 2026].map((y, i) => ({ a: `s6-page-${y}`, w: .082, x: -.058, z: .155 + i * .002, on: ['cal', .1], win: [.22 + i * .12, i < 3 ? .34 + i * .12 : .84], dir: -1 })),
+    { a: 'char-kayiu-wait', w: .055, x: .08, z: .14, sink: .1, head: [['kayiu', -.05, .97]] },
+    { a: 'char-miggy-a-front', w: .038, x: -.17, z: .21, head: [['miggy', 0, .97]] },
+  ], eye: [[.03, .11, .46, 0, .07, .16], [-.03, .1, .44, 0, .07, .16]] },
+  { sky: 'dusk', ground: 'lawn', sun: ['#ffae6b', 1.4], pieces: [
+    { a: 's7-backdrop-dusk', w: .43, x: 0, z: .012 },
+    { a: 's7-palm-house', w: .34, x: 0, z: .06, glow: true, win: [.04, 2] },
+    { a: 's7-pond', w: .22, x: 0, z: .14, win: [.06, .52] },
+    { a: 's7-lawn-path', w: .36, x: 0, z: .245, win: [.08, .52] },
+    { a: 'pose-kew-back', w: .055, x: 0, z: .27, walk: { l0: .14, l1: .44, x0: .02, x1: 0, z0: .265, z1: .16, s0: 1, s1: .72 }, win: [.1, .5] },
+    { sign: true, w: .19, x: 0, z: .19, win: [.58, 2], border: 14 },
+    { a: 'char-miggy-b-front', w: .038, x: -.135, z: .215, win: [.64, 2], head: [['miggy', 0, .97]] },
+    { a: 'char-kayiu-b-front', w: .04, x: .13, z: .215, win: [.65, 2], head: [['kayiu', 0, .97]] },
+  ] },
+];
+
+// captions and bubbles in global scroll terms, for the overlay
+const CAPTIONS = WORDS.map((s, k) => [G(k, .06), G(k, k === 6 ? 1.05 : .84), s.caption]);
+const BUBBLES = WORDS.flatMap((s, k) => s.bubbles.map(([who, a, b, t]) => [who, G(k, a), G(k, b), t]));
+
+// ---------- room ----------
 const tl = new THREE.TextureLoader(), gl = new GLTFLoader();
-const img = src => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
-const ART = {
-  backdrop: 'assets/s1/backdrop.webp', river: 'assets/s1/river.webp', grass: 'assets/s1/grass.webp',
-  swan1: 'assets/s1/swan-1.webp', swan2: 'assets/s1/swan-2.webp', swan3: 'assets/s1/swan-3.webp',
-  miggy: 'assets/char/miggy-front.webp', kayiu: 'assets/char/kayiu-front.webp', leaf: 'assets/misc/leaf-green.webp',
-};
+const img = src => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('missing ' + src)); i.src = src; });
+const lampGlow = [];
 
 async function room() {
   const hdr = await new RGBELoader().loadAsync('assets/room/lythwood_lounge_1k.hdr');
@@ -56,7 +124,7 @@ async function room() {
   };
   const lamp = await prop('desk_lamp_arm_01', -.347, .51, .55, -.76);
   lamp.traverse(o => { if (o.isMesh) o.castShadow = false; });   // its head sits between the paper sun and the page
-  lamp.traverse(o => { if (o.isMesh && o.material.name.includes('light')) { o.material = o.material.clone(); o.material.emissive = new THREE.Color('#ffd9a0'); o.material.emissiveIntensity = 6; } });
+  lamp.traverse(o => { if (o.isMesh && o.material.name.includes('light')) { o.material = o.material.clone(); o.material.emissive = new THREE.Color('#ffd9a0'); o.material.emissiveIntensity = 6; lampGlow.push(o.material); } });
   const tea = await prop('tea_set_01', 0, 0, 1, 0);
   const keep = { tea_set_01_teapot_01: [.52, .2, .5], tea_set_01_teapot_01_lid: [.52, .2, .5], tea_set_01_cup_small_01: [.36, .5, 2.2], tea_set_01_saucer_circular_04: [.36, .5, 0], tea_set_01_sugar_cup_01: [.55, .42, 0], tea_set_01_sugar_cup_01_lid: [.55, .42, 0] };
   const dead = [];
@@ -76,9 +144,10 @@ const sun = new THREE.DirectionalLight('#fff3e0', 0); sun.position.set(-.55, 1.1
 sun.castShadow = true; sun.shadow.mapSize.set(MOBILE ? 1024 : 2048, MOBILE ? 1024 : 2048); sun.shadow.bias = -.00008; sun.shadow.normalBias = .0003; sun.shadow.radius = 4;
 Object.assign(sun.shadow.camera, { left: -.3, right: .3, top: .3, bottom: -.3, near: .1, far: 3 }); sun.target.position.set(0, .05, .12); scene.add(sun, sun.target);
 const hemi = new THREE.HemisphereLight('#cfe6ff', '#caa27a', 0); scene.add(hemi);
+const signLight = new THREE.PointLight('#ffd49a', 0, .5, 1.6); signLight.position.set(0, PG + .1, .32); scene.add(signLight);
 
 // ---------- page art (watercolour washes on paper) ----------
-const PW = 2048, PH = Math.round(2048 * BD / BW);
+const PW = MOBILE ? 1024 : 1280, PH = Math.round(PW * BD / BW);
 function wash(x, col, cx, cy, rx, ry, a, seed) {
   const R = mulberry(seed);
   for (let i = 0; i < 26; i++) {
@@ -87,30 +156,31 @@ function wash(x, col, cx, cy, rx, ry, a, seed) {
     x.fillStyle = g; x.fillRect(px - r, py - r, r * 2, r * 2);
   }
 }
+const grad = (x, stops) => { const g = x.createLinearGradient(0, 0, 0, PH); stops.forEach(([o, c]) => g.addColorStop(o, c)); x.fillStyle = g; x.fillRect(PW * .02, PW * .02, PW * .96, PH - PW * .04); };
+const PAGES = {
+  sky: x => { grad(x, [[0, 'rgba(70,140,215,.95)'], [.65, 'rgba(140,195,235,.75)'], [1, 'rgba(225,235,230,.3)']]); for (let i = 0; i < 9; i++) wash(x, 'rgba(255,255,255,A)', PW * (.1 + i * .1), PH * (.12 + (i % 3) * .07), PW * .06, PH * .025, .5, i + 3); },
+  santorini: x => { grad(x, [[0, 'rgba(40,110,200,.95)'], [.7, 'rgba(110,175,230,.8)'], [1, 'rgba(250,210,150,.55)']]); wash(x, 'rgba(255,220,150,A)', PW * .8, PH * .75, PW * .12, PH * .1, .35, 5); },
+  venice: x => { grad(x, [[0, 'rgba(150,190,225,.9)'], [.6, 'rgba(240,205,190,.75)'], [1, 'rgba(250,225,200,.5)']]); for (let i = 0; i < 6; i++) wash(x, 'rgba(255,255,255,A)', PW * (.15 + i * .14), PH * .2, PW * .07, PH * .03, .45, i + 9); },
+  catbells: x => { grad(x, [[0, 'rgba(50,130,215,.95)'], [.6, 'rgba(120,185,235,.8)'], [1, 'rgba(215,232,240,.4)']]); for (let i = 0; i < 7; i++) wash(x, 'rgba(255,255,255,A)', PW * (.12 + i * .12), PH * (.15 + (i % 2) * .08), PW * .07, PH * .03, .55, i + 20); },
+  golden: x => { grad(x, [[0, 'rgba(120,150,210,.75)'], [.5, 'rgba(250,190,140,.85)'], [1, 'rgba(255,215,150,.75)']]); wash(x, 'rgba(255,240,180,A)', PW * .65, PH * .6, PW * .15, PH * .12, .5, 31); },
+  home: x => { grad(x, [[0, 'rgba(242,222,190,.9)'], [1, 'rgba(236,210,175,.9)']]); x.fillStyle = 'rgba(190,150,110,.18)'; for (let i = 0; i < PW; i += PW / 24) x.fillRect(i, PW * .02, PW / 80, PH - PW * .04); },
+  dusk: x => { grad(x, [[0, 'rgba(48,40,98,.92)'], [.55, 'rgba(150,92,140,.75)'], [1, 'rgba(250,170,110,.7)']]); const R = mulberry(5); x.fillStyle = 'rgba(255,248,220,.9)'; for (let i = 0; i < 60; i++) { x.beginPath(); x.arc(PW * .03 + R() * PW * .94, PW * .03 + R() * PH * .45, 1 + R() * 2.5, 0, TAU); x.fill(); } },
+  meadow: x => { grad(x, [[0, 'rgba(96,150,72,.6)'], [1, 'rgba(132,180,88,.8)']]); wash(x, 'rgba(70,120,50,A)', PW * .5, PH * .6, PW * .4, PH * .3, .18, 11); },
+  stone: x => { grad(x, [[0, 'rgba(235,232,225,.7)'], [1, 'rgba(220,215,205,.8)']]); wash(x, 'rgba(60,110,190,A)', PW * .5, PH * .2, PW * .4, PH * .15, .2, 12); },
+  water: x => { grad(x, [[0, 'rgba(70,160,170,.7)'], [1, 'rgba(90,175,180,.8)']]); for (let i = 0; i < 40; i++) wash(x, 'rgba(255,255,255,A)', PW * mulberry(i + 1)(), PH * mulberry(i + 99)(), PW * .04, PH * .006, .4, i); },
+  fell: x => { grad(x, [[0, 'rgba(130,150,80,.65)'], [1, 'rgba(160,160,100,.8)']]); wash(x, 'rgba(120,110,100,A)', PW * .4, PH * .5, PW * .3, PH * .2, .2, 14); },
+  lake: x => { grad(x, [[0, 'rgba(70,120,170,.7)'], [1, 'rgba(200,170,110,.7)']]); wash(x, 'rgba(255,220,150,A)', PW * .55, PH * .4, PW * .3, PH * .1, .3, 15); },
+  floor: x => { grad(x, [[0, 'rgba(170,120,80,.7)'], [1, 'rgba(150,100,62,.8)']]); x.fillStyle = 'rgba(90,55,30,.25)'; for (let i = 0; i < PH; i += PH / 9) x.fillRect(PW * .02, i, PW * .96, 2); },
+  lawn: x => { grad(x, [[0, 'rgba(40,78,52,.8)'], [1, 'rgba(60,104,62,.85)']]); wash(x, 'rgba(255,190,110,A)', PW * .5, PH * .45, PW * .3, PH * .2, .12, 21); },
+};
+const pageCache = {};
 function page(kind) {
+  if (pageCache[kind]) return pageCache[kind];
   const c = cv(PW, PH), x = c.getContext('2d');
   paperFill(x, PW, PH, '#f5ecd9', kind.length * 7, .05);
-  if (kind === 'sky') {
-    const g = x.createLinearGradient(0, 0, 0, PH); g.addColorStop(0, 'rgba(70,140,215,.95)'); g.addColorStop(.65, 'rgba(140,195,235,.75)'); g.addColorStop(1, 'rgba(225,235,230,.3)');
-    x.fillStyle = g; x.fillRect(40, 40, PW - 80, PH - 80);
-    for (let i = 0; i < 9; i++) wash(x, 'rgba(255,255,255,A)', 200 + i * 210, 160 + (i % 3) * 90, 120, 34, .5, i + 3);
-  } else if (kind === 'ground') {
-    const g = x.createLinearGradient(0, 0, 0, PH); g.addColorStop(0, 'rgba(96,150,72,.6)'); g.addColorStop(1, 'rgba(132,180,88,.8)');
-    x.fillStyle = g; x.fillRect(30, 30, PW - 60, PH - 60);
-    wash(x, 'rgba(70,120,50,A)', PW * .5, PH * .6, PW * .4, PH * .3, .18, 11);
-    wash(x, 'rgba(240,230,120,A)', PW * .3, PH * .8, 300, 120, .15, 12);
-  } else if (kind === 'dusk') {
-    const g = x.createLinearGradient(0, 0, 0, PH); g.addColorStop(0, 'rgba(48,40,98,.92)'); g.addColorStop(.55, 'rgba(150,92,140,.75)'); g.addColorStop(1, 'rgba(250,170,110,.7)');
-    x.fillStyle = g; x.fillRect(40, 40, PW - 80, PH - 80);
-    const R = mulberry(5); x.fillStyle = 'rgba(255,248,220,.9)';
-    for (let i = 0; i < 60; i++) { x.beginPath(); x.arc(60 + R() * (PW - 120), 60 + R() * PH * .45, 1.5 + R() * 3, 0, TAU); x.fill(); }
-  } else if (kind === 'lawn') {
-    const g = x.createLinearGradient(0, 0, 0, PH); g.addColorStop(0, 'rgba(40,78,52,.8)'); g.addColorStop(1, 'rgba(60,104,62,.85)');
-    x.fillStyle = g; x.fillRect(30, 30, PW - 60, PH - 60);
-    wash(x, 'rgba(255,190,110,A)', PW * .5, PH * .45, PW * .3, PH * .2, .12, 21);
-  }
+  PAGES[kind](x);
   x.save(); x.globalAlpha = .7; x.fillStyle = x.createPattern(GRAIN, 'repeat'); x.fillRect(0, 0, PW, PH); x.restore();
-  return texOf(c);
+  return (pageCache[kind] = texOf(c));
 }
 
 function signCanvas() {
@@ -126,69 +196,64 @@ function signCanvas() {
   return c;
 }
 
-// ---------- scene state ----------
-let book, leaf, T = {};
-const pieces = [];   // { g, z, dir, rise:[a,b], fold:[a,b], sway, glide, x }
-const anchors = {};
-const heads = {};    // name -> card group, for speech-bubble anchors
+// ---------- building cards ----------
+let book, leaf;
+const pieces = [];   // built pieces across all spreads
+const byId = {};
 
 function cardFrom(source, width, o = {}) {
-  // pad first so the paper border isn't clipped at the image edge
-  const border = o.border ?? Math.max(8, Math.round(Math.max(source.width, source.height) * .012)), pad = border + 8;
-  const padded = cv(source.width + pad * 2, source.height + pad * 2); padded.getContext('2d').drawImage(source, pad, pad);
+  const scale = MOBILE && source.width > 700 ? .7 : 1;
+  const border = Math.round((o.border ?? Math.max(8, Math.round(Math.max(source.width, source.height) * .012))) * scale), pad = border + 8;
+  const sw = Math.round(source.width * scale), sh = Math.round(source.height * scale);
+  const padded = cv(sw + pad * 2, sh + pad * 2); padded.getContext('2d').drawImage(source, pad, pad, sw, sh);
   const art = finishCut(padded, border);
   return cutMesh({ c: art, w: width, h: width * art.height / art.width, ax: .5, ay: 1 });   // ay = 1: anchored at the bottom edge
 }
-function place(spec) {
-  const g = cardFrom(spec.src, spec.w, spec);
-  g.position.set(spec.x, 0, spec.z); g.visible = false; book.stage.add(g);
-  const pc = { g, dir: spec.z > .15 ? -1 : 1, sway: 0, glide: 0, ...spec, x: spec.x };
-  pieces.push(pc);
-  if (spec.head) heads[spec.head] = pc;
-  return pc;
+
+function buildSpread(k, images) {
+  const specs = SP[k].pieces, sorted = [...specs].sort((a, b) => a.z - b.z);
+  for (const spec of specs) {
+    const src = spec.sign ? signCanvas() : images[spec.a];
+    if (!src) continue;
+    const g = cardFrom(src, spec.w, spec);
+    g.position.set(spec.x, 0, spec.z); g.visible = false; book.stage.add(g);
+    const order = sorted.indexOf(spec);
+    const rise = spec.win ? spec.win[0] : .015 + order * .012;
+    const fold = spec.win ? spec.win[1] : .8 + (.3 - spec.z) * .12;
+    const pc = { ...spec, g, k, rise, fold, dir: spec.dir ?? (spec.z > .15 ? -1 : 1), baseY: 0 };
+    if (spec.glow) {
+      const m = g.userData.front.material = g.userData.front.material.clone();
+      m.emissiveMap = m.map; m.emissive = new THREE.Color('#ffd28a'); m.emissiveIntensity = 0; pc.glowMat = m;
+    }
+    if (spec.id) byId[spec.id] = pc;
+    pieces.push(pc);
+  }
+  for (const pc of pieces) if (pc.k === k && pc.on) { const host = byId[pc.on[0]]; if (host) pc.baseY = host.g.userData.h * pc.on[1]; }
+  for (const pc of pieces) if (pc.k === k && pc.sink) pc.baseY = -pc.g.userData.h * pc.sink;
 }
+
+const assetsOf = k => [...new Set(SP[k].pieces.filter(s => s.a).map(s => s.a))];
+const loadImages = async names => Object.fromEntries(await Promise.all(names.map(async n => [n, await img(`assets/art/${n}.webp`)])));
 
 async function build() {
   await Promise.all(['500 40px "Cormorant Garamond"', '600 40px "Cormorant Garamond"', 'italic 40px "IM Fell English"', '40px "Patrick Hand"'].map(f => document.fonts.load(f))).catch(() => {});
-  const [im] = await Promise.all([
-    Promise.all(Object.entries(ART).map(async ([k, v]) => [k, await img(v)])).then(Object.fromEntries),
-    room(),
-  ]);
-
-  book = makeBook(coverCanvases(im.leaf));
+  const [im] = await Promise.all([loadImages([...assetsOf(0), 'leaf-green']), room()]);
+  book = makeBook(coverCanvases(im['leaf-green']));
   scene.add(book.root);
-  T = { sky: page('sky'), ground: page('ground'), dusk: page('dusk'), lawn: page('lawn') };
-  book.backMat.map = T.sky; book.groundMat.map = T.ground;
   book.backMat.color.setScalar(.62); book.groundMat.color.setScalar(.9);   // the standing page faces the sun; keep its sky from blowing out
-  book.leafFront.material.map = T.ground; book.leafBack.material.map = T.dusk;
-  for (const m of [book.backMat, book.groundMat, book.leafFront.material, book.leafBack.material]) m.needsUpdate = true;
-
-  // Spread 1: Lammas, Staines. Pieces rise back to front.
-  place({ src: im.backdrop, w: .43, x: 0, z: .012, rise: [.15, .22], fold: [.66, .70], dir: 1 });
-  place({ src: im.river, w: .43, x: 0, z: .07, rise: [.17, .24], fold: [.66, .70], dir: 1 });
-  place({ src: im.swan1, w: .055, x: -.12, z: .082, rise: [.20, .26], fold: [.66, .70], glide: .05, dir: 1 });
-  place({ src: im.swan2, w: .065, x: .03, z: .092, rise: [.21, .27], fold: [.66, .70], glide: -.04, dir: 1 });
-  place({ src: im.swan3, w: .058, x: .14, z: .086, rise: [.22, .28], fold: [.66, .70], glide: .035, dir: 1 });
-  place({ src: im.miggy, w: .05, x: -.04, z: .165, rise: [.25, .31], fold: [.67, .71], head: 'miggy' });
-  place({ src: im.kayiu, w: .038, x: .035, z: .165, rise: [.26, .32], fold: [.67, .71], head: 'kayiu' });
-  place({ src: im.grass, w: .44, x: 0, z: .275, rise: [.28, .34], fold: [.655, .695], sway: .004, lean: -1.0 });
-
-  // Spread 2: Kew at dusk, the save-the-date
-  place({ src: signCanvas(), w: .19, x: 0, z: .16, rise: [.85, .90], fold: [2, 3], border: 14, dir: 1 });
-  const m2 = place({ src: im.miggy, w: .05, x: -.135, z: .2, rise: [.87, .91], fold: [2, 3] });
-  const k2 = place({ src: im.kayiu, w: .038, x: .13, z: .2, rise: [.875, .915], fold: [2, 3] });
-  heads.miggy2 = m2; heads.kayiu2 = k2;
-
-  leaf = cardFrom(im.leaf, .042, { border: 10 });
+  buildSpread(0, im);
+  leaf = cardFrom(im['leaf-green'], .042, { border: 10 });
   leaf.userData.front.material = leaf.userData.front.material.clone(); leaf.userData.front.material.side = THREE.DoubleSide;
   leaf.userData.back.visible = false;
   scene.add(leaf);
-
   document.getElementById('loading').classList.add('done');
-  window.__dbg = { scene, pieces, book, T }; window.__ready = true;
+  window.__ready = true;
+  // the rest of the book loads in the background, one spread at a time
+  for (let k = 1; k < SP.length; k++) buildSpread(k, await loadImages(assetsOf(k)));
+  window.__all = true;
 }
 
-// ---------- particles (from the demo): lamp-beam dust and sparkles as the book opens ----------
+// ---------- particles (from the demo): lamp-beam dust and sparkles ----------
 function spriteTex(fn, n = 64) { const c = cv(n, n), x = c.getContext('2d'); fn(x, n); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t; }
 const glowTex = spriteTex((x, n) => { const g = x.createRadialGradient(n / 2, n / 2, 0, n / 2, n / 2, n / 2); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(.3, 'rgba(255,255,255,.5)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, n, n); });
 const starTex = spriteTex((x, n) => { x.translate(n / 2, n / 2); x.fillStyle = '#fff'; x.beginPath(); for (let i = 0; i < 8; i++) { const a = i / 8 * TAU, r = i % 2 ? n * .1 : n * .48; x.lineTo(Math.cos(a) * r, Math.sin(a) * r); } x.closePath(); x.fill(); });
@@ -201,25 +266,27 @@ const dust = particles(quad, addMat(glowTex, new THREE.Color(1.2, 1.0, .75)), MO
     s: (.0016 + R() * .0022) * (.5 + .5 * Math.sin(t * 1.3 + i * 2)), rx: camE.x, ry: camE.y, rz: camE.z };
 });
 scene.add(dust);
-const sparkle = particles(quad, addMat(starTex, new THREE.Color(2.4, 1.9, .9)), 90, (i, p) => {
-  const R = mulberry(i * 13 + 5), p0 = .1 + R() * .1, life = .04 + R() * .04, k = (p - p0) / life; if (k < 0 || k > 1) return null;
+const sparkle = particles(quad, addMat(starTex, new THREE.Color(2.4, 1.9, .9)), 90, (i, p) => {   // when the book opens, and when the save-the-date rises
+  const R = mulberry(i * 13 + 5), first = i < 50, p0 = first ? .012 + R() * .03 : G(6, .6) + R() * .03, life = first ? .012 + R() * .012 : .02 + R() * .02, k = (p - p0) / life;
+  if (k < 0 || k > 1) return null;
   return { x: lerp(-.2, .2, R()) + Math.sin(k * 6 + i) * .01, y: PG + k * (.08 + R() * .1), z: lerp(.02, .28, R()), s: .006 * Math.sin(k * Math.PI) * (.5 + R()), rx: camE.x, ry: camE.y, rz: camE.z + p * 40 + i };
 });
 scene.add(sparkle);
 
 // ---------- camera: [p, px,py,pz, tx,ty,tz, fov, aperture, portrait pull-back] ----------
+const HIGH = [0, .40, .64, 0, .05, .14, 30, 2.8, 2.1], MID = [0, .25, .6, 0, .07, .13, 30, 2.6, 2.0];
 const SHOTS = [
-  [0.00, .22, .42, .95, 0, .02, .15, 32, 3.0, 1.6],
-  [0.08, .12, .40, .80, 0, .03, .14, 30, 3.0, 1.7],
-  [0.20, .00, .30, .66, 0, .07, .12, 30, 2.8, 2.1],
-  [0.33, .02, .12, .50, 0, .07, .13, 30, 2.4, 1.8],
-  [0.37, .05, .115, .45, 0, .062, .15, 30, 2.2, 1.6],
-  [0.62, -.04, .118, .45, 0, .062, .15, 30, 2.2, 1.6],
-  [0.68, .00, .36, .64, 0, .05, .13, 30, 2.8, 2.1],
-  [0.80, .00, .40, .62, 0, .05, .14, 30, 2.8, 2.1],
-  [0.90, .00, .17, .64, 0, .075, .17, 30, 2.6, 2.0],
-  [1.00, .00, .15, .60, 0, .075, .17, 30, 2.6, 2.0],
+  [0.000, .22, .42, .95, 0, .02, .15, 32, 3.0, 1.6],
+  [0.012, .14, .40, .82, 0, .03, .14, 30, 3.0, 1.7],
+  [OPEN_END, .02, .34, .68, 0, .06, .13, 30, 2.8, 2.1],
 ];
+for (let k = 0; k < 6; k++) {
+  const [A, B] = SP[k].eye;
+  if (k > 0) SHOTS.push([G(k, .02), ...HIGH]);
+  SHOTS.push([G(k, .12), ...MID], [G(k, .24), ...A, 30, 2.2, 1.6], [G(k, .74), ...B, 30, 2.2, 1.6], [G(k, .84), ...HIGH]);
+}
+SHOTS.push([G(6, .02), ...HIGH], [G(6, .12), ...MID], [G(6, .3), 0, .12, .5, 0, .08, .12, 30, 2.4, 1.8], [G(6, .5), 0, .2, .62, 0, .08, .12, 30, 2.6, 2.0],
+  [G(6, .66), 0, .17, .64, 0, .075, .17, 30, 2.6, 2.6], [1.0, 0, .15, .6, 0, .075, .17, 30, 2.6, 2.6]);
 const shot = track(SHOTS.map(k => [k[0], k.slice(1)]));
 function cameraAt(p) {
   const v = shot(p), pos = new THREE.Vector3(v[0], v[1], v[2]), tgt = new THREE.Vector3(v[3], v[4], v[5]);
@@ -229,75 +296,109 @@ function cameraAt(p) {
   post.dof.focus = pos.distanceTo(tgt); post.dof.aper = v[7] * (a < 1 ? .7 : 1);
 }
 
+// ---------- the leaf's journey ----------
+function leafAt(p) {
+  const k = spreadAt(p), l = local(p, k);
+  const rest = new THREE.Vector3(0, BD * .73, -.0185); book.open.localToWorld(rest);
+  let pos, flat = 0, vis = true, wob = 1, landed = false;
+  if (p < START[1]) {          // Staines: lifts off the cover, drifts, then the wind takes it
+    const lift = seg(p, .005, G(0, .12)), away = seg(l, .76, .86);
+    pos = new THREE.Vector3(lerp(rest.x, -.08, ss(lift)), lerp(rest.y + .001, .17, ss(lift)), lerp(rest.z, .2, ss(lift)));
+    pos.x += Math.sin(p * 120) * .01 * lift + away * .55; pos.y += away * .3; pos.z += away * .3;
+    flat = 1 - lift; wob = lift; vis = away < 1;
+  } else if (k === 4) {        // Derwentwater: drifts down and settles on the water by the proposal
+    const fall = seg(l, .08, .45);
+    pos = new THREE.Vector3(lerp(-.35, .07, ss(fall)), lerp(.3, PG + .003, ss(fall)) + Math.sin(fall * 12) * .012 * (1 - fall), lerp(.3, .13, ss(fall)));
+    flat = ss(seg(l, .35, .45)); wob = 1 - flat; vis = l > .08 && l < .82;
+  } else if (k === 6) {        // Kew: blows in through the door, then lands gold on the save-the-date
+    const inn = seg(l, .1, .42), land = seg(l, .62, .74);
+    pos = new THREE.Vector3(lerp(-.4, 0, ss(inn)), lerp(.25, .09, ss(inn)), lerp(.35, .08, ss(inn)));
+    if (land > 0) pos = new THREE.Vector3(lerp(-.2, .02, ss(land)), lerp(.25, PG + .146, ss(land)), lerp(.32, .19, ss(land)));
+    vis = (l > .1 && l < .44) || land > 0; landed = land >= 1;
+    const gold = seg(l, .5, .7); leaf.userData.front.material.color.setRGB(1, lerp(1, .82, gold), lerp(1, .45, gold));
+  } else vis = false;
+  leaf.visible = vis; if (!vis) return;
+  leaf.position.copy(pos);
+  if (landed) leaf.rotation.set(-.25, 0, .1);
+  else leaf.rotation.set(-Math.PI / 2 * flat + Math.sin(p * 220) * .6 * wob, p * 80 * wob, Math.sin(p * 170) * .5 * wob);
+}
+
 // ---------- the story ----------
-const tmp = new THREE.Vector3();
-function toScreen(v) { const q = v.clone().project(cam); if (q.z > 1) return null; return [(q.x * .5 + .5) * W, (-q.y * .5 + .5) * H]; }
+const tmp = new THREE.Vector3(), anchors = {};
+const toScreen = v => { const q = v.clone().project(cam); if (q.z > 1) return null; return [(q.x * .5 + .5) * W, (-q.y * .5 + .5) * H]; };
+const col = new THREE.Color(), col2 = new THREE.Color();
 
 function frame(p, t) {
-  // book opens: the cover swings up and becomes the backdrop
-  const op = eio(seg(p, .03, .16));
-  book.setOpen(Math.PI / 2 * op + Math.sin(seg(p, .14, .2) * Math.PI) * -.03);
+  const k = spreadAt(p), l = local(p, k);
 
-  // page turn to the dusk spread
-  const u = seg(p, .72, .83);
-  if (u > 0 && u < 1) { book.groundMat.map = T.lawn; book.setLeaf(eio(u)); }
-  else { book.setLeaf(0); book.groundMat.map = u >= 1 ? T.lawn : T.ground; }
-  book.backMat.map = u >= 1 ? T.dusk : T.sky;
+  // the book opens: the cover swings up and becomes the backdrop
+  const op = eio(seg(p, .003, OPEN_END - .004));
+  book.setOpen(Math.PI / 2 * op + Math.sin(seg(p, OPEN_END - .008, OPEN_END + .006) * Math.PI) * -.03);
+
+  // page turn at the end of each spread: old ground on the front, next sky on the back
+  const u = k < 6 ? seg(l, .88, 1) : 0, nk = Math.min(k + 1, 6);
+  book.leafFront.material.map = page(SP[k].ground); book.leafBack.material.map = page(SP[nk].sky);
+  if (u > 0 && u < 1) { book.groundMat.map = page(SP[nk].ground); book.backMat.map = page(SP[k].sky); book.setLeaf(eio(u)); }
+  else { book.setLeaf(0); book.groundMat.map = page(SP[k].ground); book.backMat.map = page(SP[k].sky); }
 
   // pop-ups: rise with overshoot, fold in the reverse order
   for (const pc of pieces) {
-    const up = back(seg(p, pc.rise[0], pc.rise[1]), 1.7), dn = 1 - ss(seg(p, pc.fold[0], pc.fold[1]));
-    const k = Math.min(up, dn);
-    pc.g.visible = k > .002; if (!pc.g.visible) continue;
-    pc.g.rotation.x = pc.dir * (Math.PI / 2) * (1 - k) + (pc.lean || 0) * clamp(k) * .8;
-    if (pc.sway) pc.g.rotation.z = Math.sin(t * 1.6 + pc.x * 40) * pc.sway * k;
-    if (pc.glide) pc.g.position.x = pc.x + pc.glide * Math.sin(p * 9 + pc.x * 20) + Math.sin(t * .8 + pc.x * 30) * .002;
+    const lk = local(p, pc.k);
+    if (lk < -.05 || lk > 1.05) { pc.g.visible = false; continue; }
+    const up = back(seg(lk, pc.rise, pc.rise + .06), 1.7), dn = 1 - ss(seg(lk, pc.fold, pc.fold + .045));
+    const kk = Math.min(up, dn);
+    pc.g.visible = kk > .002; if (!pc.g.visible) continue;
+    pc.g.rotation.x = pc.dir * (Math.PI / 2) * (1 - kk) + (pc.lean || 0) * clamp(kk) * .8;
+    pc.g.position.y = pc.baseY;
+    if (pc.sway) pc.g.rotation.z = Math.sin(t * 1.6 + pc.x * 40) * pc.sway * kk;
+    if (pc.glide) pc.g.position.x = pc.x + pc.glide * Math.sin(lk * 9 + pc.x * 20) + Math.sin(t * .8 + pc.x * 30) * .002;
+    if (pc.walk) {
+      const w = pc.walk, s = ss(seg(lk, w.l0, w.l1));
+      pc.g.position.x = lerp(w.x0, w.x1, s);
+      if (w.z0 !== undefined) pc.g.position.z = lerp(w.z0, w.z1, s);
+      if (w.s0 !== undefined) pc.g.scale.setScalar(lerp(w.s0, w.s1, s));
+      if (s > 0 && s < 1) pc.g.position.y += Math.abs(Math.sin(lk * 140)) * .0025;
+    }
+    if (pc.glowMat) pc.glowMat.emissiveIntensity = .55 * seg(lk, .1, .25) * (1 - seg(lk, .46, .52));
   }
+  leafAt(p);
 
-  // the ginkgo leaf: rests on the cover, lifts as the book opens, blows away, then drifts home onto the sign
-  if (leaf) {
-    const lift = seg(p, .05, .2), away = seg(p, .6, .68), home = seg(p, .88, .97);
-    const rest = new THREE.Vector3(0, BD * .73, -.0185);
-    book.open.localToWorld(rest);
-    let x = lerp(rest.x, -.08, ss(lift)), y = lerp(rest.y + .001, .17, ss(lift)), z = lerp(rest.z, .2, ss(lift));
-    x += Math.sin(p * 40) * .01 * lift + away * .55; y += away * .3; z += away * .3;
-    if (home > 0) { x = lerp(-.4, .02, ss(home)); y = lerp(.3, PG + .145, ss(home)) + Math.sin(home * 14) * .01 * (1 - home); z = lerp(.4, .16, ss(home)); }
-    leaf.position.set(x, y, z);
-    const wob = lift * (1 - home) + (home > 0 && home < 1 ? 1 - home : 0);
-    leaf.rotation.set(-Math.PI / 2 + (1 - lift) * 0 + Math.sin(p * 22) * .6 * wob + (home >= 1 ? Math.PI / 2 - .25 : 0), p * 8 * wob, Math.sin(p * 17) * .5 * wob);
-    leaf.visible = !(away >= 1 && home <= 0);
-    const gold = seg(p, .85, .95); leaf.userData.front.material.color.setRGB(1, lerp(1, .82, gold), lerp(1, .45, gold));
-  }
-
-  // light: the desk lamp in the real room; a paper sun inside the story that sinks to dusk at Kew
-  const inStory = seg(p, .04, .16), real = 1 - inStory, dusk = seg(p, .78, .9);
-  sun.intensity = inStory * (2.6 - dusk * 1.5);
-  sun.color.set('#fff3e0').lerp(new THREE.Color('#ffae6b'), dusk);
-  spot.intensity = real * 1.0 + inStory * (.12 + dusk * 1.1); bulb.intensity = spot.intensity * .6;
-  hemi.intensity = .15 + inStory * (.55 - dusk * .3);
-  scene.environmentIntensity = .42 * real + inStory * (.35 - dusk * .12);
-  renderer.toneMappingExposure = 1 - dusk * .08;
+  // light: the desk lamp in the room; a paper sun in the story with its own colour per spread; lights out at Kew
+  const inStory = seg(p, .004, OPEN_END), real = 1 - inStory;
+  const [c0, i0] = SP[k].sun, [c1, i1] = SP[nk].sun;
+  col.set(c0).lerp(col2.set(c1), u);
+  const out = k === 6 ? seg(l, .46, .54) : 0, signOn = k === 6 ? seg(l, .56, .7) : 0;
+  sun.color.copy(col); sun.intensity = inStory * lerp(i0, i1, u) * (1 - out * .92);
+  spot.intensity = (real * 1.0 + inStory * .12) * (1 - out * .7) + signOn * .22; bulb.intensity = spot.intensity * .6;
+  lampGlow.forEach(m => { m.emissiveIntensity = 6 * (1 - out * .8) + signOn * 1.5; });
+  hemi.intensity = (.15 + inStory * .5) * (1 - out * .75) + signOn * .05;
+  scene.environmentIntensity = (.42 * real + inStory * .33) * (1 - out * .7) + signOn * .03;
+  signLight.intensity = signOn * .06;
+  renderer.toneMappingExposure = 1 - out * .12;
 
   cameraAt(p);
   camE.setFromQuaternion(cam.quaternion);
   dust.userData.update(t); sparkle.userData.update(p);
-  post.vig.uniforms.warm.value = .12 + dusk * .1;
-  post.bloom.strength = .22 + seg(p, .08, .14) * (1 - seg(p, .18, .26)) * .15 + dusk * .1;
+  post.vig.uniforms.warm.value = .12 + (k === 6 ? .12 : k === 4 ? .08 : 0);
+  post.vig.uniforms.amt.value = .35 + out * .25;
+  post.bloom.strength = .22 + seg(p, .005, .02) * (1 - seg(p, .03, .05)) * .15 + (k === 6 ? .06 : 0);
   post.dof.maxCoc = 14 * H / 1080;
-  if (params.has("nopost")) renderer.render(scene, cam); else post.composer.render();
+  if (params.has('nopost')) renderer.render(scene, cam); else post.composer.render();
 
   // overlay: comic captions and speech bubbles
   OX.clearRect(0, 0, W, H);
   const s = clamp(Math.min(W / 1400, H / 800), .55, 1.6) * (MOBILE ? 1.15 : 1);
-  for (const [name, key] of [['miggy', 'miggy'], ['kayiu', 'kayiu'], ['miggy2', 'miggy'], ['kayiu2', 'kayiu']]) {
-    const pc = heads[name]; if (!pc || !pc.g.visible) continue;
-    const h = pc.g.userData.h; tmp.set(0, h * .96, 0); pc.g.localToWorld(tmp);
-    const sc = toScreen(tmp); if (sc) anchors[key] = sc;
+  for (const key in anchors) delete anchors[key];
+  for (const pc of pieces) {
+    if (!pc.head || !pc.g.visible || pc.k !== k) continue;
+    for (const [who, dx, dy] of pc.head) {
+      tmp.set(dx * pc.g.userData.w, pc.g.userData.h * dy, 0); pc.g.localToWorld(tmp);
+      const sc = toScreen(tmp); if (sc) anchors[who] = sc;
+    }
   }
-  const top = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sat')) || 0;
-  drawCaptions(OX, p, W, H, s, top * DPR);
-  drawBubbles(OX, p, W, H, s, anchors);
-  document.getElementById('hint').style.opacity = p < .02 ? .85 : 0;
+  drawCaptions(OX, p, W, H, s, 0, CAPTIONS);
+  drawBubbles(OX, p, W, H, s, anchors, BUBBLES);
+  document.getElementById('hint').style.opacity = p < .004 ? .85 : 0;
 }
 
 // ---------- scroll, resize, loop ----------
@@ -320,3 +421,4 @@ renderer.setAnimationLoop(ms => {
   cur = fixedP !== null ? fixedP : cur + (target - cur) * .12;
   frame(cur, ms / 1000);
 });
+window.__dbg = { scene, pieces, START, LEN };

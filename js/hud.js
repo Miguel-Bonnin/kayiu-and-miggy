@@ -1,6 +1,5 @@
 // 2D overlay: comic caption boxes and typed speech bubbles.
 // Bubble drawing adapted from lemo-opuscar styles/paper-popup/demo/hud.js (MIT, LemoLab), driven by scroll instead of time.
-import { CAPTIONS, BUBBLES } from './story.js';
 import { clamp, seg, back, ss, lerp } from './lib.js';
 
 const INK = '#3a2a24';
@@ -13,10 +12,10 @@ function wrap(x, text, maxW) {
 }
 
 // s = overlay scale (1 at a 1400 x 800 desktop view), top = safe-area offset in px
-export function drawCaptions(x, p, W, H, s, top) {
+export function drawCaptions(x, p, W, H, s, top, CAPTIONS) {
   for (const [a, b, text] of CAPTIONS) {
-    if (p < a - .01 || p > b + .03) continue;
-    const kin = back(seg(p, a, a + .03), 2), kout = 1 - ss(seg(p, b, b + .03)), k = kin * kout;
+    if (p < a - .005 || p > b + .015) continue;
+    const kin = back(seg(p, a, a + .012), 2), kout = 1 - ss(seg(p, b, b + .012)), k = kin * kout;
     if (k <= 0) continue;
     x.save();
     x.font = `${Math.round(34 * s)}px ${FONT}`;
@@ -32,13 +31,13 @@ export function drawCaptions(x, p, W, H, s, top) {
 }
 
 // anchors: { miggy: [sx, sy], kayiu: [sx, sy] } = screen position of the top of each head, in px
-export function drawBubbles(x, p, W, H, s, anchors) {
+export function drawBubbles(x, p, W, H, s, anchors, BUBBLES) {
   for (const [who, a, b, text] of BUBBLES) {
-    if (p < a - .005 || p > b + .01) continue;
+    if (p < a || p > b + (b - a) * .06) continue;
     const an = anchors[who]; if (!an) continue;
-    const kin = back(seg(p, a, a + .012), 2.2), kout = 1 - ss(seg(p, b - .004, b + .008)), k = kin * kout;
+    const d = b - a, kin = back(seg(p, a, a + d * .12), 2.2), kout = 1 - ss(seg(p, b - d * .06, b + d * .06)), k = kin * kout;
     if (k <= 0) continue;
-    const n = Math.floor(clamp(seg(p, a + .006, a + (b - a) * .55)) * text.length);
+    const n = Math.max(1, Math.ceil(clamp(seg(p, a + d * .04, a + d * .5)) * text.length));
     x.save();
     const fs = Math.round(32 * s); x.font = `${fs}px ${FONT}`;
     const maxW = Math.min(420 * s, W * .62), lines = wrap(x, text, maxW);
