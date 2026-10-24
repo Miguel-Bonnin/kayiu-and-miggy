@@ -10,16 +10,17 @@
 <meta property="og:image" content="assets/misc/og.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=IM+Fell+English:ital@0;1&family=Patrick+Hand&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <script type="importmap">
-{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }
 </script>
 </head>
 <body>
 <section id="book">
   <div id="stage">
     <canvas id="gl"></canvas>
+    <canvas id="ov"></canvas>
     <div id="hint">scroll to open</div>
     <div id="loading">Opening the book…</div>
   </div>
@@ -43,9 +44,9 @@
 
 <footer>
   <p>Made by Miggy, with love and a lot of paper.</p>
-  <p class="credit">Pop-up technique adapted from <a href="https://github.com/lemomo-ai/lemo-opuscar">lemo-opuscar</a> by LemoLab (MIT).</p>
+  <p class="credit">Pop-up book engine adapted from <a href="https://github.com/lemomo-ai/lemo-opuscar">lemo-opuscar</a> by LemoLab (MIT). Room HDRI, walnut, lamp and tea set from <a href="https://polyhaven.com">Poly Haven</a> (CC0).</p>
 </footer>
 
-<script type="module" src="main.js"></script>
+<script type="module" src="js/main.js"></script>
 </body>
 </html>
