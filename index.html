@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Miggy &amp; Kayiu · 15 May 2027</title>
+<meta name="description" content="Seventeen years to the day. Save the date: Saturday 15 May 2027, Kew Gardens.">
+<meta property="og:title" content="Miggy &amp; Kayiu · Save the date">
+<meta property="og:description" content="Saturday 15 May 2027 · Kew Gardens · Seventeen years to the day">
+<meta property="og:image" content="assets/misc/og.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=IM+Fell+English:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+</script>
+</head>
+<body>
+<section id="book">
+  <div id="stage">
+    <canvas id="gl"></canvas>
+    <div id="hint">scroll to open</div>
+    <div id="loading">Opening the book…</div>
+  </div>
+</section>
+
+<div id="fallback" hidden>
+  <img src="assets/misc/fallback-teens.jpg" alt="Miggy and Kayiu as teenagers on the riverbank at Lammas, Staines">
+  <p class="fell">Lammas, Staines · 2010</p>
+</div>
+
+<main id="details">
+  <p class="kicker">Save the date</p>
+  <h1>Miggy <span class="amp">&amp;</span> Kayiu</h1>
+  <p class="date">Saturday 15 May 2027</p>
+  <p class="place">Kew Gardens, London</p>
+  <p class="fell">Seventeen years to the day.</p>
+  <div class="more">
+    <p>Formal invitation, RSVP and travel details to follow.</p>
+  </div>
+</main>
+
+<footer>
+  <p>Made by Miggy, with love and a lot of paper.</p>
+  <p class="credit">Pop-up technique adapted from <a href="https://github.com/lemomo-ai/lemo-opuscar">lemo-opuscar</a> by LemoLab (MIT).</p>
+</footer>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
