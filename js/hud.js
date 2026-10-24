@@ -30,33 +30,66 @@ export function drawCaptions(x, p, W, H, s, top, CAPTIONS) {
   }
 }
 
+// Split "a *b* **c**" into styled words: [{w, i (italic), b (bold)}]
+function words(text) {
+  const out = []; let i = false, b = false;
+  for (const tok of text.split(/(\*\*|\*)/)) {
+    if (tok === '**') { b = !b; continue; }
+    if (tok === '*') { i = !i; continue; }
+    tok.split(/(\s+)/).forEach(w => { if (w) out.push({ w, i, b }); });
+  }
+  return out;
+}
+const fontOf = (wd, fs) => `${wd.b ? 'bold ' : ''}${wd.i ? 'italic ' : ''}${Math.round(fs * (wd.b ? 1.08 : 1))}px ${FONT}`;
+
 // anchors: { miggy: [sx, sy], kayiu: [sx, sy] } = screen position of the top of each head, in px
 export function drawBubbles(x, p, W, H, s, anchors, BUBBLES) {
-  for (const [who, a, b, text] of BUBBLES) {
+  for (const [who, a, b, text, style] of BUBBLES) {
     if (p < a || p > b + (b - a) * .06) continue;
     const an = anchors[who]; if (!an) continue;
     const d = b - a, kin = back(seg(p, a, a + d * .12), 2.2), kout = 1 - ss(seg(p, b - d * .06, b + d * .06)), k = kin * kout;
     if (k <= 0) continue;
-    const n = Math.max(1, Math.ceil(clamp(seg(p, a + d * .04, a + d * .5)) * text.length));
+    const ws = words(text), total = ws.reduce((n, wd) => n + wd.w.length, 0);
+    const n = Math.max(1, Math.ceil(clamp(seg(p, a + d * .04, a + d * .5)) * total));
     x.save();
-    const fs = Math.round(32 * s); x.font = `${fs}px ${FONT}`;
-    const maxW = Math.min(420 * s, W * .62), lines = wrap(x, text, maxW);
-    const tw = Math.max(...lines.map(l => x.measureText(l).width), 120 * s);
-    const bw = tw + 46 * s, lh = fs * 1.15, bh = lines.length * lh + 34 * s, r = 26 * s;
-    let bx = clamp(an[0] - bw * .5, 12 * s, W - bw - 12 * s), by = clamp(an[1] - bh - 46 * s, 70 * s, H - bh - 12 * s);
-    const tx = clamp(an[0], bx + r + 10 * s, bx + bw - r - 10 * s), tipY = Math.max(by + bh + 8 * s, Math.min(an[1] - 8 * s, by + bh + 44 * s));
+    const fs = Math.round(32 * s), think = style === 'think';
+    // lay out styled words into lines
+    const maxW = Math.min(440 * s, W * .66), lines = [[]]; let lw = 0;
+    for (const wd of ws) {
+      x.font = fontOf(wd, fs); const ww = x.measureText(wd.w).width;
+      if (/^\s+$/.test(wd.w) && lw === 0) continue;
+      if (lw + ww > maxW && lw > 0 && !/^\s+$/.test(wd.w)) { lines.push([]); lw = 0; }
+      if (/^\s+$/.test(wd.w) && lw + ww > maxW) continue;
+      lines[lines.length - 1].push({ ...wd, x: lw, ww }); lw += ww;
+    }
+    const lineW = l => l.length ? l[l.length - 1].x + l[l.length - 1].ww : 0;
+    const tw = Math.max(...lines.map(lineW), 120 * s);
+    const bw = tw + 46 * s, lh = fs * 1.2, bh = lines.length * lh + 34 * s, r = think ? bh * .48 : 26 * s;
+    let bx = clamp(an[0] - bw * .5, 12 * s, W - bw - 12 * s), by = clamp(an[1] - bh - 50 * s, 70 * s, H - bh - 12 * s);
+    const tx = clamp(an[0], bx + r * .6 + 10 * s, bx + bw - r * .6 - 10 * s), tipY = Math.max(by + bh + 8 * s, Math.min(an[1] - 8 * s, by + bh + 44 * s));
     x.translate(tx, by + bh); x.scale(k, k); x.translate(-tx, -(by + bh));
     x.globalAlpha = clamp(kout * 1.5);
     x.fillStyle = 'rgba(40,25,15,.22)'; x.beginPath(); x.roundRect(bx + 5 * s, by + 8 * s, bw, bh, r); x.fill();
-    const body = () => { x.beginPath(); x.roundRect(bx, by, bw, bh, r); };
-    const tail = () => { x.beginPath(); x.moveTo(tx - 16 * s, by + bh - 2); x.lineTo(lerp(tx, an[0], .7), tipY); x.lineTo(tx + 12 * s, by + bh - 2); };
-    x.fillStyle = '#fffdf8'; body(); x.fill(); tail(); x.fill();
-    x.lineWidth = 3.5 * s; x.strokeStyle = INK; x.lineJoin = 'round';
-    body(); x.stroke(); tail(); x.stroke();
-    x.fillStyle = '#fffdf8'; x.fillRect(tx - 13 * s, by + bh - 6 * s, 24 * s, 8 * s);
+    x.lineWidth = 3.5 * s; x.strokeStyle = INK; x.lineJoin = 'round'; x.fillStyle = '#fffdf8';
+    x.beginPath(); x.roundRect(bx, by, bw, bh, r); x.fill(); x.stroke();
+    if (think) {   // a trail of little thought circles down to the head
+      for (const [f, rr] of [[.35, 9], [.62, 6], [.85, 4]]) {
+        x.beginPath(); x.arc(lerp(tx, an[0], f), lerp(by + bh + 6 * s, tipY + 10 * s, f), rr * s, 0, Math.PI * 2); x.fill(); x.stroke();
+      }
+    } else {
+      x.beginPath(); x.moveTo(tx - 16 * s, by + bh - 2); x.lineTo(lerp(tx, an[0], .7), tipY); x.lineTo(tx + 12 * s, by + bh - 2); x.fill(); x.stroke();
+      x.fillRect(tx - 13 * s, by + bh - 6 * s, 24 * s, 8 * s);
+    }
     x.fillStyle = '#241814'; x.textBaseline = 'alphabetic';
     let left = n;
-    lines.forEach((l, i) => { const shown = l.slice(0, Math.max(0, left)); left -= l.length + 1; x.fillText(shown, bx + 23 * s, by + 17 * s + fs * .9 + i * lh); });
+    lines.forEach((l, li) => {
+      for (const wd of l) {
+        if (left <= 0) break;
+        const shown = wd.w.slice(0, left); left -= wd.w.length;
+        x.font = fontOf(wd, fs); x.fillStyle = wd.b ? '#8a2f1c' : '#241814';
+        x.fillText(shown, bx + 23 * s + wd.x, by + 17 * s + fs * .9 + li * lh);
+      }
+    });
     x.restore();
   }
 }

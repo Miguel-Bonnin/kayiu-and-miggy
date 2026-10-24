@@ -1,6 +1,7 @@
 // The words on the page. Edit freely.
 // Times are local to each spread: 0 = the spread starts rising, 1 = its page has turned.
-// Bubbles: [who, from, to, text]. The text types itself on over the first half of its range.
+// Bubbles: [who, from, to, text, style?]. The text types itself on over the first half of its range.
+// In the text, *word* is italic and **word** is bold. style 'think' draws a thought bubble.
 
 export const SPREADS = [
   { // 1
@@ -16,7 +17,7 @@ export const SPREADS = [
     caption: 'Santorini',
     bubbles: [
       ['kayiu', .28, .48, 'Okay, this view is ridiculous.'],
-      ['miggy', .48, .70, 'Not bad for two kids from Staines.'],
+      ['miggy', .48, .70, '*Muy bieeeen!*'],
     ],
   },
   { // 3
@@ -29,7 +30,8 @@ export const SPREADS = [
   { // 4
     caption: 'Catbells, Lake District · 2022',
     bubbles: [
-      ['kayiu', .26, .44, "Isn't it gorgeous up here?"],
+      ['kayiu', .20, .36, "Isn't it gorgeous up here?"],
+      ['miggy', .32, .47, 'Crap. *Not now...*', 'think'],
       ['miggy', .48, .62, 'Yep. Very... busy.'],
       ['miggy', .62, .78, 'Shall we walk down by the lake instead?'],
     ],
@@ -45,14 +47,14 @@ export const SPREADS = [
     caption: 'The long engagement',
     bubbles: [
       ['kayiu', .34, .56, 'Any day now, Miggy...'],
-      ['miggy', .58, .76, 'Good things take time!'],
+      ['miggy', .58, .80, 'Please, *just* another year, I am *almost* **Dr. Juan Miguel Carreon Bonnin!**'],
     ],
   },
   { // 7: Kew. The lights go out at about .5 and the save-the-date rises.
-    caption: 'Kew Gardens · 15 May 2027',
+    caption: 'Kew Gardens · 15 May 2028',
     bubbles: [
-      ['kayiu', .70, .84, 'Seventeen years later...'],
-      ['miggy', .84, 1.01, 'Still feeding the swans with you.'],
+      ['kayiu', .70, .84, "We'd love for you to spend the day with us."],
+      ['miggy', .84, 1.01, 'Hope you can **save the date!**'],
     ],
   },
 ];

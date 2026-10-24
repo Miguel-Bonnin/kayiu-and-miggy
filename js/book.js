@@ -38,7 +38,7 @@ export function coverCanvases(leafImg) {
   both((k, col) => { k.fillStyle = col; k.textAlign = 'center'; k.textBaseline = 'alphabetic';
     k.font = '500 230px "Cormorant Garamond"'; k.fillText('Miggy & Kayiu', w * .5, h * .42);
     k.font = 'italic 84px "IM Fell English"'; k.fillText('~ a story in pages ~', w * .5, h * .56);
-    k.font = '600 70px "Cormorant Garamond"'; k.fillText('15 · V · 2010', w * .5, h * .86); });
+    k.font = '600 70px "Cormorant Garamond"'; k.fillText('15 · 05 · 2028', w * .5, h * .86); });
   // a gold-foil ginkgo leaf stamped between the title and the date
   if (leafImg) {
     const lw = 300, lh = lw * leafImg.height / leafImg.width, lx = w * .5 - lw / 2, ly = h * .62;

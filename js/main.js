@@ -55,24 +55,23 @@ const SP = [
     { a: 's2-backdrop-sea', w: .43, x: 0, z: .012 },
     { a: 's2-far-houses', w: .28, x: .08, z: .05 },
     { a: 's2-mid-dome', w: .21, x: -.1, z: .11 },
-    { a: 's2-near-path', w: .3, x: .05, z: .19 },
+    { a: 's2-near-path', w: .22, x: .12, z: .17 },
     { a: 'pose-santorini-side', w: .1, x: -.14, z: .235, walk: { l0: .2, l1: .76, x0: -.15, x1: .1 }, head: [['miggy', -.2, .98], ['kayiu', .2, .9]] },
   ], eye: [[-.12, .115, .5, -.1, .07, .19], [.11, .115, .5, .09, .07, .19]] },
   { sky: 'venice', ground: 'water', sun: ['#fff1e0', 2.4], pieces: [
     { a: 's3-backdrop-canal', w: .43, x: 0, z: .012 },
-    { a: 's3-gondola', w: .12, x: .2, z: .085, walk: { l0: .15, l1: .8, x0: .24, x1: -.24 } },
-    { a: 's3-bridge', w: .26, x: 0, z: .1, id: 'bridge' },
-    { a: 'pose-venice-side', w: .07, x: 0, z: .102, on: ['bridge', .78], head: [['kayiu', -.2, .9], ['miggy', .22, .98]] },
-    { a: 's3-near-arch-left', w: .14, x: -.16, z: .27 },
-    { a: 's3-near-arch-right', w: .1, x: .17, z: .27 },
-  ], eye: [[.06, .15, .47, 0, .115, .1], [-.05, .145, .45, 0, .11, .1]] },
+    { a: 's3-gondola', w: .12, x: .2, z: .12, path: [[.1, .26, .11], [.32, .12, .27], [.5, .03, .27], [.66, -.02, .17], [.82, -.26, .11]] },
+    { a: 's3-bridge', w: .26, x: 0, z: .2, id: 'bridge' },
+    { a: 'pose-venice-side', w: .07, x: 0, z: .19, on: ['bridge', .74], head: [['kayiu', -.2, .9], ['miggy', .22, .98]] },
+    { a: 's3-near-arch-left', w: .14, x: -.17, z: .29 },
+    { a: 's3-near-arch-right', w: .1, x: .18, z: .29 },
+  ], eye: [[.06, .17, .55, 0, .12, .18], [-.05, .165, .53, 0, .115, .18]] },
   { sky: 'catbells', ground: 'fell', sun: ['#fff6e8', 2.7], pieces: [
     { a: 's4-backdrop-ridge', w: .43, x: 0, z: .012 },
     ...[[1, -.17, .07], [2, -.1, .12], [3, .12, .08], [4, .17, .14], [5, -.15, .17], [6, .08, .12], [7, -.04, .09], [8, .15, .2], [9, -.19, .23], [10, .02, .15], [11, .19, .25]]
       .map(([i, x, z]) => ({ a: `s4-hiker-${String(i).padStart(2, '0')}`, w: .032, x, z })),
     { a: 'char-miggy-catbells', w: .022, x: -.04, z: .205, id: 'miggycb', head: [['miggy', 0, .97]] },
     { a: 'char-kayiu-catbells', w: .035, x: .035, z: .205, head: [['kayiu', -.15, .97]] },
-    { a: 's4-bubble', w: .045, x: -.07, z: .206, on: ['miggycb', 1.02], win: [.3, .46] },
   ], eye: [[-.08, .11, .47, -.02, .065, .17], [.06, .1, .45, .01, .062, .19]] },
   { sky: 'golden', ground: 'lake', sun: ['#ffc27a', 2.2], pieces: [
     { a: 's5-backdrop-lake', w: .43, x: 0, z: .012 },
@@ -82,16 +81,16 @@ const SP = [
   ], eye: [[.05, .13, .47, -.01, .065, .16], [-.04, .125, .45, 0, .062, .17]] },
   { sky: 'home', ground: 'floor', sun: ['#fff3e0', 2.3], pieces: [
     { a: 's6-calendar-2022', w: .1, x: -.06, z: .15, id: 'cal' },
-    ...[2023, 2024, 2025, 2026].map((y, i) => ({ a: `s6-page-${y}`, w: .082, x: -.058, z: .155 + i * .002, on: ['cal', .1], win: [.22 + i * .12, i < 3 ? .34 + i * .12 : .84], dir: -1 })),
-    { a: 'char-kayiu-wait', w: .055, x: .08, z: .14, sink: .1, head: [['kayiu', -.05, .97]] },
-    { a: 'char-miggy-a-front', w: .038, x: -.17, z: .21, head: [['miggy', 0, .97]] },
-  ], eye: [[.03, .11, .46, 0, .07, .16], [-.03, .1, .44, 0, .07, .16]] },
+    ...[2023, 2024, 2025, 2026].map((y, i) => ({ a: `s6-page-${y}`, w: .082, x: -.058, z: .155 + i * .002, on: ['cal', .1], win: [.18 + i * .1, i < 3 ? .28 + i * .1 : .84], dir: -1, fly: i < 3 })),
+    { a: 'char-kayiu-wait', w: .046, x: .08, z: .14, sink: .1, head: [['kayiu', -.05, .97]] },
+    { a: 'char-miggy-b-side', w: .055, x: -.13, z: .2, walk: { l0: .48, l1: .6, x0: -.34, x1: -.12 }, head: [['miggy', .05, .97]] },
+  ], eye: [[.03, .11, .46, .01, .07, .16], [-.03, .11, .48, -.03, .07, .17]] },
   { sky: 'dusk', ground: 'lawn', sun: ['#ffae6b', 1.4], pieces: [
     { a: 's7-backdrop-dusk', w: .43, x: 0, z: .012 },
     { a: 's7-palm-house', w: .34, x: 0, z: .06, glow: true, win: [.04, 2] },
     { a: 's7-pond', w: .22, x: 0, z: .14, win: [.06, .52] },
     { a: 's7-lawn-path', w: .36, x: 0, z: .245, win: [.08, .52] },
-    { a: 'pose-kew-back', w: .055, x: 0, z: .27, walk: { l0: .14, l1: .44, x0: .02, x1: 0, z0: .265, z1: .16, s0: 1, s1: .72 }, win: [.1, .5] },
+    { a: 'pose-kew-back', w: .055, x: 0, z: .27, walk: { l0: .14, l1: .44, x0: .02, x1: 0, z0: .275, z1: .16, s0: 1, s1: .72, climb: [.2, .05] }, win: [.1, .5] },
     { sign: true, w: .19, x: 0, z: .19, win: [.58, 2], border: 14 },
     { a: 'char-miggy-b-front', w: .038, x: -.135, z: .215, win: [.64, 2], head: [['miggy', 0, .97]] },
     { a: 'char-kayiu-b-front', w: .04, x: .13, z: .215, win: [.65, 2], head: [['kayiu', 0, .97]] },
@@ -100,7 +99,7 @@ const SP = [
 
 // captions and bubbles in global scroll terms, for the overlay
 const CAPTIONS = WORDS.map((s, k) => [G(k, .06), G(k, k === 6 ? 1.05 : .84), s.caption]);
-const BUBBLES = WORDS.flatMap((s, k) => s.bubbles.map(([who, a, b, t]) => [who, G(k, a), G(k, b), t]));
+const BUBBLES = WORDS.flatMap((s, k) => s.bubbles.map(([who, a, b, t, style]) => [who, G(k, a), G(k, b), t, style]));
 
 // ---------- room ----------
 const tl = new THREE.TextureLoader(), gl = new GLTFLoader();
@@ -190,9 +189,9 @@ function signCanvas() {
   x.textAlign = 'center';
   x.font = 'italic 52px "IM Fell English"'; x.fillStyle = '#b8893a'; x.fillText('Save the date', 450, 138);
   x.fillStyle = '#3a2a24'; x.font = '500 106px "Cormorant Garamond"'; x.fillText('Miggy & Kayiu', 450, 272);
-  x.font = '600 54px "Cormorant Garamond"'; x.fillText('Saturday 15 May 2027', 450, 372);
+  x.font = '600 54px "Cormorant Garamond"'; x.fillText('Monday 15 May 2028', 450, 372);
   x.font = '500 46px "Cormorant Garamond"'; x.fillText('Kew Gardens', 450, 442);
-  x.font = 'italic 36px "IM Fell English"'; x.fillText('seventeen years to the day', 450, 520);
+  x.font = 'italic 36px "IM Fell English"'; x.fillText('eighteen years to the day', 450, 520);
   return c;
 }
 
@@ -300,7 +299,7 @@ function cameraAt(p) {
 function leafAt(p) {
   const k = spreadAt(p), l = local(p, k);
   const rest = new THREE.Vector3(0, BD * .73, -.0185); book.open.localToWorld(rest);
-  let pos, flat = 0, vis = true, wob = 1, landed = false;
+  let pos, flat = 0, vis = true, wob = 1;
   if (p < START[1]) {          // Staines: lifts off the cover, drifts, then the wind takes it
     const lift = seg(p, .005, G(0, .12)), away = seg(l, .76, .86);
     pos = new THREE.Vector3(lerp(rest.x, -.08, ss(lift)), lerp(rest.y + .001, .17, ss(lift)), lerp(rest.z, .2, ss(lift)));
@@ -310,17 +309,18 @@ function leafAt(p) {
     const fall = seg(l, .08, .45);
     pos = new THREE.Vector3(lerp(-.35, .07, ss(fall)), lerp(.3, PG + .003, ss(fall)) + Math.sin(fall * 12) * .012 * (1 - fall), lerp(.3, .13, ss(fall)));
     flat = ss(seg(l, .35, .45)); wob = 1 - flat; vis = l > .08 && l < .82;
-  } else if (k === 6) {        // Kew: blows in through the door, then lands gold on the save-the-date
-    const inn = seg(l, .1, .42), land = seg(l, .62, .74);
+  } else if (k === 6) {        // Kew: blows in through the door, then spins out towards you to reveal the date
+    const inn = seg(l, .1, .42), spin = seg(l, .5, .64);
     pos = new THREE.Vector3(lerp(-.4, 0, ss(inn)), lerp(.25, .09, ss(inn)), lerp(.35, .08, ss(inn)));
-    if (land > 0) pos = new THREE.Vector3(lerp(-.2, .02, ss(land)), lerp(.25, PG + .146, ss(land)), lerp(.32, .19, ss(land)));
-    vis = (l > .1 && l < .44) || land > 0; landed = land >= 1;
-    const gold = seg(l, .5, .7); leaf.userData.front.material.color.setRGB(1, lerp(1, .82, gold), lerp(1, .45, gold));
+    if (spin > 0) { pos = new THREE.Vector3(Math.sin(spin * 9) * .03, lerp(.07, .3, spin * spin), lerp(.16, .34, spin)); wob = 4; }   // a glowing gold leaf spirals up and away as the date rises
+    vis = (l > .1 && l < .44) || (spin > 0 && spin < 1);
+    const gold = seg(l, .45, .55), lm = leaf.userData.front.material; lm.color.setRGB(1, lerp(1, .82, gold), lerp(1, .45, gold));
+    if (!lm.emissiveMap) { lm.emissiveMap = lm.map; lm.emissive.set('#ffcf70'); lm.needsUpdate = true; }
+    lm.emissiveIntensity = spin > 0 ? .9 * Math.sin(Math.PI * spin) : 0;
   } else vis = false;
   leaf.visible = vis; if (!vis) return;
   leaf.position.copy(pos);
-  if (landed) leaf.rotation.set(-.25, 0, .1);
-  else leaf.rotation.set(-Math.PI / 2 * flat + Math.sin(p * 220) * .6 * wob, p * 80 * wob, Math.sin(p * 170) * .5 * wob);
+  leaf.rotation.set(-Math.PI / 2 * flat + Math.sin(p * 220) * .6 * wob, p * 80 * wob, Math.sin(p * 170) * .5 * wob);
 }
 
 // ---------- the story ----------
@@ -345,7 +345,7 @@ function frame(p, t) {
   for (const pc of pieces) {
     const lk = local(p, pc.k);
     if (lk < -.05 || lk > 1.05) { pc.g.visible = false; continue; }
-    const up = back(seg(lk, pc.rise, pc.rise + .06), 1.7), dn = 1 - ss(seg(lk, pc.fold, pc.fold + .045));
+    const up = back(seg(lk, pc.rise, pc.rise + .06), 1.7), dn = pc.fly ? (lk > pc.fold + .08 ? 0 : 1) : 1 - ss(seg(lk, pc.fold, pc.fold + .045));
     const kk = Math.min(up, dn);
     pc.g.visible = kk > .002; if (!pc.g.visible) continue;
     pc.g.rotation.x = pc.dir * (Math.PI / 2) * (1 - kk) + (pc.lean || 0) * clamp(kk) * .8;
@@ -358,6 +358,16 @@ function frame(p, t) {
       if (w.z0 !== undefined) pc.g.position.z = lerp(w.z0, w.z1, s);
       if (w.s0 !== undefined) pc.g.scale.setScalar(lerp(w.s0, w.s1, s));
       if (s > 0 && s < 1) pc.g.position.y += Math.abs(Math.sin(lk * 140)) * .0025;
+      if (w.climb) pc.g.position.y += w.climb[1] * Math.sin(Math.PI * clamp((s - w.climb[0] + .17) / .34));   // up over the front card, down behind it
+    }
+    if (pc.path) {
+      if (!pc.track) pc.track = track(pc.path.map(([a, x, z]) => [a, [x, z]]));
+      const [x, z] = pc.track(lk); pc.g.position.x = x; pc.g.position.z = z;
+      pc.g.position.y += Math.sin(t * 1.4 + pc.x) * .0012;
+    }
+    if (pc.fly) {   // calendar pages tear off and fly away instead of folding
+      const f = seg(lk, pc.fold, pc.fold + .08);
+      if (f > 0) { pc.g.visible = f < 1; pc.g.rotation.x = 0; pc.g.position.x = pc.x + f * .25; pc.g.position.y = pc.baseY + f * .2 + Math.sin(f * 9) * .01; pc.g.rotation.z = -f * 2.5; pc.g.position.z = pc.z + f * .08; }
     }
     if (pc.glowMat) pc.glowMat.emissiveIntensity = .55 * seg(lk, .1, .25) * (1 - seg(lk, .46, .52));
   }
