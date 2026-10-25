@@ -3,7 +3,8 @@
 import { clamp, seg, back, ss, lerp } from './lib.js';
 
 const INK = '#3a2a24';
-const FONT = '"Patrick Hand", "Comic Sans MS", cursive';
+const ZH = document.documentElement.lang.startsWith('zh');
+const FONT = ZH ? '"LXGW WenKai TC", "Patrick Hand", "Noto Sans TC", sans-serif' : '"Patrick Hand", "Comic Sans MS", cursive';
 
 function wrap(x, text, maxW) {
   const words = text.split(' '), lines = []; let cur = '';
@@ -36,7 +37,8 @@ function words(text) {
   for (const tok of text.split(/(\*\*|\*)/)) {
     if (tok === '**') { b = !b; continue; }
     if (tok === '*') { i = !i; continue; }
-    tok.split(/(\s+)/).forEach(w => { if (w) out.push({ w, i, b }); });
+    // Chinese wraps between any two characters; everything else wraps at spaces
+    (tok.match(/[\u3000-\u9fff\uff00-\uffef]|[^\s\u3000-\u9fff\uff00-\uffef]+|\s+/g) || []).forEach(w => out.push({ w, i, b }));
   }
   return out;
 }

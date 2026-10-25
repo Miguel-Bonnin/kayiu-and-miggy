@@ -10,7 +10,9 @@ import { makeBook, coverCanvases, texOf, BW, BD, PG } from './book.js';
 import { cutMesh, particles } from './cutmesh.js';
 import { makePost, resizePost } from './post.js';
 import { drawCaptions, drawBubbles } from './hud.js';
-import { SPREADS as WORDS } from './story.js';
+import { SPREADS, SPREADS_ZH, SCENE_TEXT } from './story.js';
+const LANG = document.documentElement.lang.startsWith('zh') ? 'zh' : 'en';
+const WORDS = LANG === 'zh' ? SPREADS_ZH : SPREADS, TXT = SCENE_TEXT[LANG];
 
 const MOBILE = matchMedia('(pointer: coarse)').matches || innerWidth < 700;
 const DPR = Math.min(devicePixelRatio || 1, MOBILE ? 1.5 : 2);
@@ -257,12 +259,7 @@ function signCanvas() {
   g.addColorStop(0, 'rgba(255,246,214,.55)'); g.addColorStop(1, 'rgba(255,246,214,0)');
   x.save(); x.globalCompositeOperation = 'source-atop'; x.fillStyle = g; x.fillRect(0, 0, Wc, Hc); x.restore();
   x.textAlign = 'center'; x.fillStyle = '#4a2a14'; x.shadowColor = 'rgba(255,240,200,.8)'; x.shadowBlur = 10;
-  const line = (font, text, y) => { x.font = font; x.fillText(text, Wc / 2, Hc * y); };
-  line('italic 64px "IM Fell English"', 'Save the date', .2);
-  line('500 150px "Cormorant Garamond"', 'Miggy & Kayiu', .34);
-  line('600 74px "Cormorant Garamond"', 'Monday 15 May 2028', .46);
-  line('500 64px "Cormorant Garamond"', 'Kew Gardens', .55);
-  line('italic 48px "IM Fell English"', 'eighteen years to the day', .64);
+  for (const [font, text, y] of TXT.leaf) { x.font = font; x.fillText(text, Wc / 2, Hc * y); }
   return c;
 }
 
@@ -313,10 +310,11 @@ const assetsOf = k => [...new Set([...SP[k].pieces.flatMap(s => [s.a, s.prefer])
 const loadImages = async names => Object.fromEntries(await Promise.all(names.map(async n => [n, await img(`assets/art/${n}.webp`).catch(() => null)])));
 
 async function build() {
-  await Promise.all(['500 40px "Cormorant Garamond"', '600 40px "Cormorant Garamond"', 'italic 40px "IM Fell English"', '40px "Patrick Hand"'].map(f => document.fonts.load(f))).catch(() => {});
+  const zhFonts = LANG === 'zh' ? ['600 40px "Noto Serif TC"', '700 40px "Noto Serif TC"', '500 40px "Noto Serif TC"', '40px "LXGW WenKai TC"'] : [];
+  await Promise.all(['500 40px "Cormorant Garamond"', '600 40px "Cormorant Garamond"', 'italic 40px "IM Fell English"', '40px "Patrick Hand"', ...zhFonts].map(f => document.fonts.load(f, LANG === 'zh' ? '敬請預留日期倫敦邱園我們的故事' : 'Aa'))).catch(() => {});
   const [im] = await Promise.all([loadImages([...assetsOf(0), 'leaf-green']), room()]);
   desk().catch(e => console.warn('desk props', e));
-  book = makeBook(coverCanvases(im['leaf-green']));
+  book = makeBook(coverCanvases(im['leaf-green'], TXT.cover, TXT.coverFont));
   scene.add(book.root);
   book.backMat.color.setScalar(.62); book.groundMat.color.setScalar(.9);   // the standing page faces the sun; keep its sky from blowing out
   LEAF_IMG = im['leaf-green'];

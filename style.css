@@ -50,3 +50,7 @@ footer a { color: #e8c98a; }
 .credit { opacity: .75; font-size: 13px; }
 
 body.nogl #book { display: none; }
+
+/* 繁體中文 */
+html:lang(zh-Hant) body, html:lang(zh-Hant) .fell, html:lang(zh-Hant) .kicker, html:lang(zh-Hant) #hint, html:lang(zh-Hant) #loading { font-family: "Noto Serif TC", "Cormorant Garamond", serif; font-style: normal; }
+html:lang(zh-Hant) h1 { font-family: "Cormorant Garamond", "Noto Serif TC", serif; }

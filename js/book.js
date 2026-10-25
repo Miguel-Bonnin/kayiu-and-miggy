@@ -23,7 +23,7 @@ function edgeCanvas() {
 }
 
 // cloth cover + gold-foil title; also generates the roughness(g)/metalness(b) map
-export function coverCanvases(leafImg) {
+export function coverCanvases(leafImg, sub = '~ a story in pages ~', subFont = 'italic 84px "IM Fell English"') {
   const w = 2048, h = Math.round(2048 * BD / BW), c = cv(w, h), x = c.getContext('2d'), m = cv(w, h), y = m.getContext('2d');
   x.fillStyle = '#2c4a3a'; x.fillRect(0, 0, w, h);
   const R = mulberry(3);
@@ -37,7 +37,7 @@ export function coverCanvases(leafImg) {
     for (const [cx, cy] of [[120, 120], [w - 120, 120], [120, h - 120], [w - 120, h - 120]]) { k.beginPath(); k.arc(cx, cy, 34, 0, Math.PI * 2); k.fillStyle = col; k.fill(); } });
   both((k, col) => { k.fillStyle = col; k.textAlign = 'center'; k.textBaseline = 'alphabetic';
     k.font = '500 230px "Cormorant Garamond"'; k.fillText('Miggy & Kayiu', w * .5, h * .42);
-    k.font = 'italic 84px "IM Fell English"'; k.fillText('~ a story in pages ~', w * .5, h * .56);
+    k.font = subFont; k.fillText(sub, w * .5, h * .56);
     k.font = '600 70px "Cormorant Garamond"'; k.fillText('15 · 05 · 2028', w * .5, h * .86); });
   // a gold-foil ginkgo leaf stamped between the title and the date
   if (leafImg) {
