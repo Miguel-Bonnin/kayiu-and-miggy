@@ -54,7 +54,7 @@ export const SPREADS = [
     caption: 'Kew Gardens · 15 May 2028',
     bubbles: [
       ['kayiu', .70, .84, "We'd love for you to spend the day with us."],
-      ['miggy', .84, 1.01, 'Hope you can **save the date!**'],
+      ['miggy', .84, .97, 'Hope you can **save the date!**'],
     ],
   },
 ];

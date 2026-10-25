@@ -89,9 +89,11 @@ const SP = [
     { a: 's7-backdrop-dusk', w: .43, x: 0, z: .012 },
     { a: 's7-palm-house', w: .34, x: 0, z: .06, glow: true, win: [.04, 2] },
     { a: 's7-pond', w: .22, x: 0, z: .14, win: [.06, .52] },
-    { a: 's7-lawn-path', w: .36, x: 0, z: .245, win: [.08, .52] },
+    { a: 's7-lawn-path', prefer: 's7-lawn-path-plain', w: .36, x: 0, z: .245, win: [.08, .52] },
+    { a: 's7-ginkgo-tree-left', opt: true, w: .12, x: -.175, z: .225, win: [.07, 2] },
+    { a: 's7-ginkgo-tree-right', opt: true, w: .12, x: .175, z: .225, win: [.075, 2] },
     { a: 'pose-kew-back', w: .055, x: 0, z: .27, walk: { l0: .14, l1: .44, x0: .02, x1: 0, z0: .275, z1: .16, s0: 1, s1: .72, climb: [.2, .05] }, win: [.1, .5] },
-    { sign: true, w: .19, x: 0, z: .19, win: [.58, 2], border: 14 },
+    { sign: true, w: .21, x: 0, z: .19, win: [.6, 2], border: 12, grow: true },
     { a: 'char-miggy-b-front', w: .038, x: -.135, z: .215, win: [.64, 2], head: [['miggy', 0, .97]] },
     { a: 'char-kayiu-b-front', w: .04, x: .13, z: .215, win: [.65, 2], head: [['kayiu', 0, .97]] },
   ] },
@@ -182,16 +184,29 @@ function page(kind) {
   return (pageCache[kind] = texOf(c));
 }
 
+// The save-the-date, lettered on a big golden ginkgo leaf (Kayiu's idea)
+let LEAF_IMG = null, GOLD_LEAF = null;
 function signCanvas() {
-  const c = cv(900, 620), x = c.getContext('2d');
-  paperFill(x, 900, 620, '#fbf6ea', 4, .04);
-  x.strokeStyle = '#b8893a'; x.lineWidth = 6; x.strokeRect(34, 34, 832, 552); x.lineWidth = 2; x.strokeRect(48, 48, 804, 524);
-  x.textAlign = 'center';
-  x.font = 'italic 52px "IM Fell English"'; x.fillStyle = '#b8893a'; x.fillText('Save the date', 450, 138);
-  x.fillStyle = '#3a2a24'; x.font = '500 106px "Cormorant Garamond"'; x.fillText('Miggy & Kayiu', 450, 272);
-  x.font = '600 54px "Cormorant Garamond"'; x.fillText('Monday 15 May 2028', 450, 372);
-  x.font = '500 46px "Cormorant Garamond"'; x.fillText('Kew Gardens', 450, 442);
-  x.font = 'italic 36px "IM Fell English"'; x.fillText('eighteen years to the day', 450, 520);
+  const src = GOLD_LEAF || LEAF_IMG, Wc = 1600, Hc = Math.round(Wc * src.height / src.width);
+  const c = cv(Wc, Hc), x = c.getContext('2d');
+  x.drawImage(src, 0, 0, Wc, Hc);
+  if (!GOLD_LEAF) {   // recolour the green leaf to autumn gold until the gold art arrives
+    x.globalCompositeOperation = 'color'; x.fillStyle = '#d9a21e'; x.fillRect(0, 0, Wc, Hc);
+    x.globalCompositeOperation = 'soft-light'; x.fillStyle = 'rgba(255,236,170,.5)'; x.fillRect(0, 0, Wc, Hc);
+    x.globalCompositeOperation = 'destination-in'; x.drawImage(src, 0, 0, Wc, Hc);
+    x.globalCompositeOperation = 'source-over';
+  }
+  // a soft light patch behind the words so they read on the veins
+  const g = x.createRadialGradient(Wc / 2, Hc * .42, 0, Wc / 2, Hc * .42, Wc * .38);
+  g.addColorStop(0, 'rgba(255,246,214,.55)'); g.addColorStop(1, 'rgba(255,246,214,0)');
+  x.save(); x.globalCompositeOperation = 'source-atop'; x.fillStyle = g; x.fillRect(0, 0, Wc, Hc); x.restore();
+  x.textAlign = 'center'; x.fillStyle = '#4a2a14'; x.shadowColor = 'rgba(255,240,200,.8)'; x.shadowBlur = 10;
+  const line = (font, text, y) => { x.font = font; x.fillText(text, Wc / 2, Hc * y); };
+  line('italic 64px "IM Fell English"', 'Save the date', .2);
+  line('500 150px "Cormorant Garamond"', 'Miggy & Kayiu', .34);
+  line('600 74px "Cormorant Garamond"', 'Monday 15 May 2028', .46);
+  line('500 64px "Cormorant Garamond"', 'Kew Gardens', .55);
+  line('italic 48px "IM Fell English"', 'eighteen years to the day', .64);
   return c;
 }
 
@@ -212,7 +227,7 @@ function cardFrom(source, width, o = {}) {
 function buildSpread(k, images) {
   const specs = SP[k].pieces, sorted = [...specs].sort((a, b) => a.z - b.z);
   for (const spec of specs) {
-    const src = spec.sign ? signCanvas() : images[spec.a];
+    const src = spec.sign ? signCanvas() : (spec.prefer && images[spec.prefer]) || images[spec.a];
     if (!src) continue;
     const g = cardFrom(src, spec.w, spec);
     g.position.set(spec.x, 0, spec.z); g.visible = false; book.stage.add(g);
@@ -231,8 +246,9 @@ function buildSpread(k, images) {
   for (const pc of pieces) if (pc.k === k && pc.sink) pc.baseY = -pc.g.userData.h * pc.sink;
 }
 
-const assetsOf = k => [...new Set(SP[k].pieces.filter(s => s.a).map(s => s.a))];
-const loadImages = async names => Object.fromEntries(await Promise.all(names.map(async n => [n, await img(`assets/art/${n}.webp`)])));
+const assetsOf = k => [...new Set(SP[k].pieces.flatMap(s => [s.a, s.prefer]).filter(Boolean))];
+// missing files are skipped (art that hasn't been made yet), not fatal
+const loadImages = async names => Object.fromEntries(await Promise.all(names.map(async n => [n, await img(`assets/art/${n}.webp`).catch(() => null)])));
 
 async function build() {
   await Promise.all(['500 40px "Cormorant Garamond"', '600 40px "Cormorant Garamond"', 'italic 40px "IM Fell English"', '40px "Patrick Hand"'].map(f => document.fonts.load(f))).catch(() => {});
@@ -240,15 +256,20 @@ async function build() {
   book = makeBook(coverCanvases(im['leaf-green']));
   scene.add(book.root);
   book.backMat.color.setScalar(.62); book.groundMat.color.setScalar(.9);   // the standing page faces the sun; keep its sky from blowing out
+  LEAF_IMG = im['leaf-green'];
   buildSpread(0, im);
-  leaf = cardFrom(im['leaf-green'], .042, { border: 10 });
+  makeFalling(im['leaf-green']);
+  leaf = cardFrom(im['leaf-green'], .032, { border: 10 });
   leaf.userData.front.material = leaf.userData.front.material.clone(); leaf.userData.front.material.side = THREE.DoubleSide;
   leaf.userData.back.visible = false;
   scene.add(leaf);
   document.getElementById('loading').classList.add('done');
   window.__ready = true;
   // the rest of the book loads in the background, one spread at a time
-  for (let k = 1; k < SP.length; k++) buildSpread(k, await loadImages(assetsOf(k)));
+  for (let k = 1; k < SP.length; k++) {
+    if (k === 6) GOLD_LEAF = await img('assets/art/leaf-gold-hero.webp').catch(() => null);
+    buildSpread(k, await loadImages(assetsOf(k)));
+  }
   window.__all = true;
 }
 
@@ -285,7 +306,7 @@ for (let k = 0; k < 6; k++) {
   SHOTS.push([G(k, .12), ...MID], [G(k, .24), ...A, 30, 2.2, 1.6], [G(k, .74), ...B, 30, 2.2, 1.6], [G(k, .84), ...HIGH]);
 }
 SHOTS.push([G(6, .02), ...HIGH], [G(6, .12), ...MID], [G(6, .3), 0, .12, .5, 0, .08, .12, 30, 2.4, 1.8], [G(6, .5), 0, .2, .62, 0, .08, .12, 30, 2.6, 2.0],
-  [G(6, .66), 0, .17, .64, 0, .075, .17, 30, 2.6, 2.6], [1.0, 0, .15, .6, 0, .075, .17, 30, 2.6, 2.6]);
+  [G(6, .66), 0, .2, .72, 0, .09, .17, 30, 2.6, 1.9], [1.0, 0, .18, .68, 0, .09, .17, 30, 2.6, 1.9]);
 const shot = track(SHOTS.map(k => [k[0], k.slice(1)]));
 function cameraAt(p) {
   const v = shot(p), pos = new THREE.Vector3(v[0], v[1], v[2]), tgt = new THREE.Vector3(v[3], v[4], v[5]);
@@ -295,32 +316,69 @@ function cameraAt(p) {
   post.dof.focus = pos.distanceTo(tgt); post.dof.aper = v[7] * (a < 1 ? .7 : 1);
 }
 
-// ---------- the leaf's journey ----------
-function leafAt(p) {
+// ---------- the leaf's journey: one thread through every page ----------
+const hostPos = new THREE.Vector3();
+function hostOf(k) { return pieces.find(pc => pc.k === k && pc.head && pc.g.visible); }
+function leafAt(p, t) {
   const k = spreadAt(p), l = local(p, k);
-  const rest = new THREE.Vector3(0, BD * .73, -.0185); book.open.localToWorld(rest);
-  let pos, flat = 0, vis = true, wob = 1;
-  if (p < START[1]) {          // Staines: lifts off the cover, drifts, then the wind takes it
-    const lift = seg(p, .005, G(0, .12)), away = seg(l, .76, .86);
-    pos = new THREE.Vector3(lerp(rest.x, -.08, ss(lift)), lerp(rest.y + .001, .17, ss(lift)), lerp(rest.z, .2, ss(lift)));
-    pos.x += Math.sin(p * 120) * .01 * lift + away * .55; pos.y += away * .3; pos.z += away * .3;
-    flat = 1 - lift; wob = lift; vis = away < 1;
-  } else if (k === 4) {        // Derwentwater: drifts down and settles on the water by the proposal
-    const fall = seg(l, .08, .45);
+  let pos = null, flat = 0, wob = 1, vis = true;
+  const enter = ss(seg(l, .03, .16)), exit = ss(seg(l, .8, .88));
+  const follow = () => {   // flutter just above and beside whoever is on the page
+    const h = hostOf(k); if (!h) return null;
+    h.g.getWorldPosition(hostPos);
+    const sc = h.g.scale.x, v = hostPos.clone().add(new THREE.Vector3(h.g.userData.w * .55 * sc, h.g.userData.h * 1.08 * sc, .015));
+    v.x += Math.sin(t * .9 + l * 12) * .018; v.y += Math.sin(t * 1.3 + l * 17) * .01; v.z += Math.cos(t * .7 + l * 9) * .012;
+    return v;
+  };
+  const inOut = v => {   // blow in from the left, blow out to the right before the page turns
+    if (!v) return null;
+    v.lerpVectors(new THREE.Vector3(-.32, .28, .32), v, enter);
+    return v.lerp(new THREE.Vector3(.36, .3, .3), exit);
+  };
+  if (k === 0) {               // Staines: lifts off the cover, then settles in beside the two of you
+    const rest = new THREE.Vector3(0, BD * .73, -.0185); book.open.localToWorld(rest);
+    const lift = seg(p, .005, G(0, .12)), f = follow() || new THREE.Vector3(-.06, .15, .2);
+    pos = rest.clone().lerp(f, ss(lift)).lerp(new THREE.Vector3(.36, .3, .3), exit);
+    flat = 1 - lift; wob = lift; vis = exit < 1;
+  } else if (k === 4) {        // Derwentwater: drifts down and settles on the water by the proposal, then lifts away
+    const fall = seg(l, .06, .42);
     pos = new THREE.Vector3(lerp(-.35, .07, ss(fall)), lerp(.3, PG + .003, ss(fall)) + Math.sin(fall * 12) * .012 * (1 - fall), lerp(.3, .13, ss(fall)));
-    flat = ss(seg(l, .35, .45)); wob = 1 - flat; vis = l > .08 && l < .82;
-  } else if (k === 6) {        // Kew: blows in through the door, then spins out towards you to reveal the date
-    const inn = seg(l, .1, .42), spin = seg(l, .5, .64);
-    pos = new THREE.Vector3(lerp(-.4, 0, ss(inn)), lerp(.25, .09, ss(inn)), lerp(.35, .08, ss(inn)));
-    if (spin > 0) { pos = new THREE.Vector3(Math.sin(spin * 9) * .03, lerp(.07, .3, spin * spin), lerp(.16, .34, spin)); wob = 4; }   // a glowing gold leaf spirals up and away as the date rises
-    vis = (l > .1 && l < .44) || (spin > 0 && spin < 1);
-    const gold = seg(l, .45, .55), lm = leaf.userData.front.material; lm.color.setRGB(1, lerp(1, .82, gold), lerp(1, .45, gold));
+    pos.lerp(new THREE.Vector3(.36, .3, .3), exit);
+    flat = ss(seg(l, .32, .42)) * (1 - exit); wob = 1 - flat; vis = l > .06 && exit < 1;
+  } else if (k === 6) {        // Kew: follows you up the path and in through the door, then falls with the others and becomes the save-the-date
+    const intoDoor = ss(seg(l, .32, .44)), fall = seg(l, .5, .61);
+    pos = inOut(follow()) || new THREE.Vector3(0, .12, .15);
+    pos.lerp(new THREE.Vector3(0, .085, .07), intoDoor);
+    if (fall > 0) { pos = new THREE.Vector3(Math.sin(fall * 10) * .04 * (1 - fall), lerp(.32, .12, ss(fall)), lerp(.25, .19, fall)); wob = 2 * (1 - fall); }
+    vis = (l > .03 && l < .44) || (fall > 0 && fall < 1);
+    const gold = seg(l, .2, .45), lm = leaf.userData.front.material; lm.color.setRGB(1, lerp(1, .82, gold), lerp(1, .45, gold));
     if (!lm.emissiveMap) { lm.emissiveMap = lm.map; lm.emissive.set('#ffcf70'); lm.needsUpdate = true; }
-    lm.emissiveIntensity = spin > 0 ? .9 * Math.sin(Math.PI * spin) : 0;
-  } else vis = false;
-  leaf.visible = vis; if (!vis) return;
+    lm.emissiveIntensity = fall > 0 ? .8 * fall : 0;
+    leaf.scale.setScalar(1 + ss(seg(fall, .7, 1)) * 3);
+  } else {                     // Santorini, Venice, Catbells, the long engagement: just there, always
+    pos = inOut(follow()); vis = !!pos && l > .03 && exit < 1;
+  }
+  if (k !== 6) { leaf.scale.setScalar(1); leaf.userData.front.material.emissiveIntensity = 0; leaf.userData.front.material.color.setRGB(1, lerp(1, .9, k / 6), lerp(1, .75, k / 6)); }
+  leaf.visible = vis && !!pos; if (!leaf.visible) return;
   leaf.position.copy(pos);
   leaf.rotation.set(-Math.PI / 2 * flat + Math.sin(p * 220) * .6 * wob, p * 80 * wob, Math.sin(p * 170) * .5 * wob);
+}
+
+// ---------- falling ginkgo leaves at Kew ----------
+let falling = null;
+function makeFalling(leafImg) {
+  const c = cv(128, Math.round(128 * leafImg.height / leafImg.width)), x = c.getContext('2d');
+  x.drawImage(leafImg, 0, 0, c.width, c.height); x.globalCompositeOperation = 'color'; x.fillStyle = '#e0a82a'; x.fillRect(0, 0, c.width, c.height);
+  x.globalCompositeOperation = 'destination-in'; x.drawImage(leafImg, 0, 0, c.width, c.height);
+  const tx = texOf(c), mat = new THREE.MeshStandardMaterial({ map: tx, emissiveMap: tx, emissive: new THREE.Color('#ffcf70'), emissiveIntensity: .45, alphaTest: .5, side: THREE.DoubleSide, roughness: .8 });
+  falling = particles(new THREE.PlaneGeometry(1, c.height / c.width), mat, MOBILE ? 24 : 48, (i, p) => {
+    const l = local(p, 6), R = mulberry(i * 31 + 7), l0 = .46 + R() * .26, life = .14 + R() * .1, f = (l - l0) / life;
+    if (f < 0 || f > 1) return null;
+    const side = R() < .5 ? -1 : 1, x0 = side * (.15 + R() * .05);
+    return { x: x0 + Math.sin(f * 8 + i) * .03 - side * f * .06, y: lerp(.21 + R() * .05, PG + .002, f), z: .2 + (R() - .5) * .08 + Math.cos(f * 6 + i) * .015,
+      rx: f * 9 + i, ry: f * 5, rz: Math.sin(f * 7 + i), s: .014 + R() * .008 };
+  });
+  scene.add(falling);
 }
 
 // ---------- the story ----------
@@ -349,6 +407,7 @@ function frame(p, t) {
     const kk = Math.min(up, dn);
     pc.g.visible = kk > .002; if (!pc.g.visible) continue;
     pc.g.rotation.x = pc.dir * (Math.PI / 2) * (1 - kk) + (pc.lean || 0) * clamp(kk) * .8;
+    if (pc.grow) { const gk = back(seg(lk, pc.rise, pc.rise + .07), 1.4); pc.g.visible = gk > .01; pc.g.rotation.x = 0; pc.g.rotation.y = (1 - clamp(gk)) * Math.PI * 3; pc.g.scale.setScalar(Math.max(gk, .01)); }
     pc.g.position.y = pc.baseY;
     if (pc.sway) pc.g.rotation.z = Math.sin(t * 1.6 + pc.x * 40) * pc.sway * kk;
     if (pc.glide) pc.g.position.x = pc.x + pc.glide * Math.sin(lk * 9 + pc.x * 20) + Math.sin(t * .8 + pc.x * 30) * .002;
@@ -371,7 +430,8 @@ function frame(p, t) {
     }
     if (pc.glowMat) pc.glowMat.emissiveIntensity = .55 * seg(lk, .1, .25) * (1 - seg(lk, .46, .52));
   }
-  leafAt(p);
+  leafAt(p, t);
+  if (falling) falling.userData.update(p);
 
   // light: the desk lamp in the room; a paper sun in the story with its own colour per spread; lights out at Kew
   const inStory = seg(p, .004, OPEN_END), real = 1 - inStory;
