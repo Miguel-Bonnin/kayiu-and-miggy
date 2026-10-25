@@ -51,38 +51,47 @@ const SP = [
     { a: 'pose-teens', w: .1, x: -.01, z: .17, head: [['miggy', -.2, .98], ['kayiu', .12, .9]] },
     { a: 's1-grass-ginkgo-branch', w: .44, x: 0, z: .275, lean: -1, sway: .004 },
   ], eye: [[.05, .115, .45, 0, .062, .15], [-.04, .118, .45, 0, .062, .15]] },
-  { sky: 'santorini', ground: 'stone', sun: ['#fff0d6', 2.5], pieces: [
+  { sky: 'santorini', ground: 'g2-santorini-cobbles', fallback: 'stone', sun: ['#fff0d6', 2.5], pieces: [
     { a: 's2-backdrop-sea', w: .43, x: 0, z: .012 },
     { a: 's2-far-houses', w: .28, x: .08, z: .05 },
     { a: 's2-mid-dome', w: .21, x: -.1, z: .11 },
     { a: 's2-near-path', w: .22, x: .12, z: .17 },
     { a: 'pose-santorini-side', w: .1, x: -.14, z: .235, walk: { l0: .2, l1: .76, x0: -.15, x1: .1 }, head: [['miggy', -.2, .98], ['kayiu', .2, .9]] },
   ], eye: [[-.12, .115, .5, -.1, .07, .19], [.11, .115, .5, .09, .07, .19]] },
-  { sky: 'venice', ground: 'water', sun: ['#fff1e0', 2.4], pieces: [
+  { sky: 'venice', ground: 'g3-venice-quay', fallback: 'water', sun: ['#fff1e0', 2.4], pieces: [
     { a: 's3-backdrop-canal', w: .43, x: 0, z: .012 },
-    { a: 's3-gondola', w: .12, x: .2, z: .12, path: [[.1, .26, .11], [.32, .12, .27], [.5, .03, .27], [.66, -.02, .17], [.82, -.26, .11]] },
+    { a: 's3-gondola', w: .12, x: .2, z: .12, path: [[.1, .26, .11], [.32, .12, .25], [.5, .03, .25], [.66, -.02, .17], [.82, -.26, .11]] },
+    { a: 's3-bank-left', w: .1, x: -.175, z: .205 },
+    { a: 's3-bank-right', w: .1, x: .175, z: .205 },
     { a: 's3-bridge', w: .26, x: 0, z: .2, id: 'bridge' },
     { a: 'pose-venice-side', w: .07, x: 0, z: .19, on: ['bridge', .74], head: [['kayiu', -.2, .9], ['miggy', .22, .98]] },
-    { a: 's3-near-arch-left', w: .14, x: -.17, z: .29 },
-    { a: 's3-near-arch-right', w: .1, x: .18, z: .29 },
-  ], eye: [[.06, .17, .55, 0, .12, .18], [-.05, .165, .53, 0, .115, .18]] },
-  { sky: 'catbells', ground: 'fell', sun: ['#fff6e8', 2.7], pieces: [
-    { a: 's4-backdrop-ridge', w: .43, x: 0, z: .012 },
-    ...[[1, -.17, .07], [2, -.1, .12], [3, .12, .08], [4, .17, .14], [5, -.15, .17], [6, .08, .12], [7, -.04, .09], [8, .15, .2], [9, -.19, .23], [10, .02, .15], [11, .19, .25]]
-      .map(([i, x, z]) => ({ a: `s4-hiker-${String(i).padStart(2, '0')}`, w: .032, x, z })),
-    { a: 'char-miggy-catbells', w: .022, x: -.04, z: .205, id: 'miggycb', head: [['miggy', 0, .97]] },
-    { a: 'char-kayiu-catbells', w: .035, x: .035, z: .205, head: [['kayiu', -.15, .97]] },
-  ], eye: [[-.08, .11, .47, -.02, .065, .17], [.06, .1, .45, .01, .062, .19]] },
-  { sky: 'golden', ground: 'lake', sun: ['#ffc27a', 2.2], pieces: [
+    { a: 's3-near-arch-left', w: .12, x: -.19, z: .29 },
+    { a: 's3-gondola-jam', prefer: 's3-gondola-jam-b', w: .17, x: .1, z: .3, glide: .01 },
+  ], eye: [[.06, .17, .58, 0, .12, .18], [-.05, .165, .56, 0, .115, .18]] },
+  { sky: 'catbells', ground: 'g4-catbells-summit', fallback: 'fell', sun: ['#fff6e8', 2.7], pieces: [
+    { a: 's4-backdrop-ridge', prefer: 's4-backdrop-fells', w: .43, x: 0, z: .012 },
+    { a: 's4-summit', w: .4, x: 0, z: .215, id: 'summit', sink: .35 },
+    ...[[1, -.17], [2, -.12], [3, .12], [4, .17], [5, -.15], [6, .08], [7, -.08], [8, .15], [9, -.19], [10, .1], [11, .19]]
+      .map(([i, x], j) => ({ a: `s4-hiker-${String(i).padStart(2, '0')}`, w: .032, x, z: .2 + (j % 3) * .004, ridge: 'summit' })),
+    { a: 'char-miggy-catbells', w: .022, x: -.035, z: .212, ridge: 'summit', head: [['miggy', 0, .97]] },
+    { a: 'char-kayiu-catbells', w: .035, x: .035, z: .212, ridge: 'summit', head: [['kayiu', -.15, .97]] },
+  ], eye: [[-.07, .19, .56, -.02, .1, .19], [.06, .185, .54, .01, .098, .2]] },
+  { sky: 'golden', ground: 'g5-derwent-shore', fallback: 'lake', sun: ['#ffc27a', 2.2], pieces: [
     { a: 's5-backdrop-lake', w: .43, x: 0, z: .012 },
     { a: 's5-island', w: .2, x: .09, z: .07 },
+    { a: 's5-duck-1', w: .032, x: -.15, z: .06, glide: .02 },
+    { a: 's5-duck-2', prefer: 's5-duck-2b', w: .03, x: -.1, z: .068, glide: .018 },
+    { a: 's5-duck-3', w: .018, x: -.065, z: .064, glide: .02 },
     { a: 'pose-proposal', w: .11, x: -.02, z: .19, head: [['miggy', -.22, .72], ['kayiu', .28, .98]] },
-    { a: 's5-shore', w: .3, x: 0, z: .28, lean: -1.0, sink: .32 },
+    { a: 's5-reeds-left', w: .13, x: -.17, z: .26 },
+    { a: 's5-reeds-right', w: .13, x: .17, z: .26 },
   ], eye: [[.05, .13, .47, -.01, .065, .16], [-.04, .125, .45, 0, .062, .17]] },
-  { sky: 'home', ground: 'floor', sun: ['#fff3e0', 2.3], pieces: [
+  { sky: 'home', ground: 'g6-home-floor', fallback: 'floor', sun: ['#fff3e0', 2.3], pieces: [
+    { a: 's6-desk', w: .2, x: -.11, z: .03 },
+    { a: 's6-shelf', w: .15, x: .12, z: .02, raise: .1 },
     { a: 's6-calendar-2022', w: .1, x: -.06, z: .15, id: 'cal' },
-    ...[2023, 2024, 2025, 2026].map((y, i) => ({ a: `s6-page-${y}`, w: .082, x: -.058, z: .155 + i * .002, on: ['cal', .1], win: [.18 + i * .1, i < 3 ? .28 + i * .1 : .84], dir: -1, fly: i < 3 })),
-    { a: 'char-kayiu-wait', w: .046, x: .08, z: .14, sink: .1, head: [['kayiu', -.05, .97]] },
+    ...[2023, 2024, 2025, 2026, 2027].map((y, i) => ({ a: `s6-mem-${y}`, w: .085, x: -.058, z: .155 + i * .002, on: ['cal', .1], win: [.16 + i * .08, i < 4 ? .24 + i * .08 : .84], dir: -1, fly: i < 4 })),
+    { a: 'char-kayiu-wait', prefer: 'char-kayiu-wait-full', w: .042, x: .08, z: .14, head: [['kayiu', -.05, .97]] },
     { a: 'char-miggy-b-side', w: .055, x: -.13, z: .2, walk: { l0: .48, l1: .6, x0: -.34, x1: -.12 }, head: [['miggy', .05, .97]] },
   ], eye: [[.03, .11, .46, .01, .07, .16], [-.03, .11, .48, -.03, .07, .17]] },
   { sky: 'dusk', ground: 'lawn', sun: ['#ffae6b', 1.4], pieces: [
@@ -134,6 +143,52 @@ async function room() {
   tea.traverse(o => { if (o.name === 'tea_set_01_cup_small_01') o.position.y += .012; });
 }
 
+// ---------- the desk: your things around the book, true to scale (the book is 44 cm wide) ----------
+// [asset, x, z, height or width (m), 'h' | 'w', turn, lie back]
+const PROPS = [
+  ['prop-plant-2', .42, -.12, .30, 'h', -.2, 0],      // monstera
+  ['prop-plant-1', -.56, -.06, .22, 'h', .35, 0],     // pothos
+  ['prop-domo', -.35, .1, .2, 'h', .35, 0],
+  ['prop-pipette', -.28, -.08, .25, 'h', .25, 0],
+  ['prop-gudetama', .29, .07, .08, 'h', -.35, 0],
+  ['prop-paella', .62, .06, .4, 'w', -.45, -1.15],
+  ['prop-whisk', .18, .5, .28, 'w', .4, -Math.PI / 2],
+];
+const minnows = [];
+async function desk() {
+  const im = await loadImages([...PROPS.map(p => p[0]), 'prop-minnow-1', 'prop-minnow-2', 'prop-minnow-3']);
+  for (const [a, x, z, size, axis, turn, lie] of PROPS) {
+    const src = im[a]; if (!src) continue;
+    const w = axis === 'w' ? size : size * src.width / src.height;
+    const g = cardFrom(src, w, { border: 8 });
+    g.position.set(x, 0, z); g.rotation.order = 'YXZ'; g.rotation.y = turn; g.rotation.x = lie; scene.add(g);
+  }
+  // a corner of the fish tank, with White Cloud minnows
+  const T = { w: .6, h: .34, d: .36 }, tank = new THREE.Group(); tank.position.set(-.46, 0, -.36); tank.rotation.y = .3; scene.add(tank);
+  const glass = new THREE.Mesh(new THREE.BoxGeometry(T.w, T.h, T.d), new THREE.MeshStandardMaterial({ color: '#cfe8e4', transparent: true, opacity: .16, roughness: .05, metalness: 0, depthWrite: false }));
+  glass.position.y = T.h / 2; tank.add(glass);
+  const water = new THREE.Mesh(new THREE.BoxGeometry(T.w - .01, T.h * .85, T.d - .01), new THREE.MeshStandardMaterial({ color: '#7fb9b0', transparent: true, opacity: .22, roughness: .2, depthWrite: false }));
+  water.position.y = T.h * .85 / 2 + .004; tank.add(water);
+  const rim = new THREE.MeshStandardMaterial({ color: '#1d1d1d', roughness: .5 });
+  for (const [sx, sy, sz, px, py, pz] of [[T.w, .012, .012, 0, T.h, T.d / 2], [T.w, .012, .012, 0, T.h, -T.d / 2], [.012, .012, T.d, T.w / 2, T.h, 0], [.012, .012, T.d, -T.w / 2, T.h, 0],
+    [T.w, .02, T.d, 0, .01, 0], [.012, T.h, .012, T.w / 2, T.h / 2, T.d / 2]]) {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), rim); m.position.set(px, py, pz); m.castShadow = true; tank.add(m);
+  }
+  const gravel = new THREE.Mesh(new THREE.BoxGeometry(T.w - .02, .03, T.d - .02), new THREE.MeshStandardMaterial({ color: '#b9a888', roughness: 1 })); gravel.position.y = .035; tank.add(gravel);
+  for (let i = 0; i < 6; i++) {
+    const src = im[`prop-minnow-${1 + i % 3}`]; if (!src) continue;
+    const f = cardFrom(src, .04, { border: 4 }); f.userData.back.visible = true;
+    tank.add(f); minnows.push({ f, R: mulberry(i * 17 + 3) });
+  }
+}
+function swim(t) {
+  for (const [i, m] of minnows.entries()) {
+    const R = m.R, sp = .25 + (i % 3) * .07, ph = i * 1.7, a = t * sp + ph;
+    const x = Math.sin(a) * .22, z = Math.sin(a * 1.3 + i) * .1, y = .08 + (i % 3) * .06 + Math.sin(t * .9 + i) * .015;
+    m.f.position.set(x, y, z); m.f.scale.x = Math.cos(a) >= 0 ? 1 : -1;   // face the way it swims
+  }
+}
+
 // ---------- lights (values from the paper-popup demo) ----------
 const lampHead = new THREE.Vector3(-.28, .375, .44);
 const spot = new THREE.SpotLight('#fff0dc', 0, 3, .75, .55, 2); spot.position.copy(lampHead); spot.target.position.set(.02, 0, .2);
@@ -174,12 +229,13 @@ const PAGES = {
   floor: x => { grad(x, [[0, 'rgba(170,120,80,.7)'], [1, 'rgba(150,100,62,.8)']]); x.fillStyle = 'rgba(90,55,30,.25)'; for (let i = 0; i < PH; i += PH / 9) x.fillRect(PW * .02, i, PW * .96, 2); },
   lawn: x => { grad(x, [[0, 'rgba(40,78,52,.8)'], [1, 'rgba(60,104,62,.85)']]); wash(x, 'rgba(255,190,110,A)', PW * .5, PH * .45, PW * .3, PH * .2, .12, 21); },
 };
-const pageCache = {};
+const pageCache = {}, GROUND_IMG = {};
 function page(kind) {
   if (pageCache[kind]) return pageCache[kind];
+  if (!PAGES[kind] && !GROUND_IMG[kind]) return page(SP.find(sp => sp.ground === kind)?.fallback || 'meadow');
   const c = cv(PW, PH), x = c.getContext('2d');
   paperFill(x, PW, PH, '#f5ecd9', kind.length * 7, .05);
-  PAGES[kind](x);
+  if (GROUND_IMG[kind]) x.drawImage(GROUND_IMG[kind], PW * .02, PW * .02, PW * .96, PH - PW * .04); else PAGES[kind](x);
   x.save(); x.globalAlpha = .7; x.fillStyle = x.createPattern(GRAIN, 'repeat'); x.fillRect(0, 0, PW, PH); x.restore();
   return (pageCache[kind] = texOf(c));
 }
@@ -225,6 +281,7 @@ function cardFrom(source, width, o = {}) {
 }
 
 function buildSpread(k, images) {
+  if (images[SP[k].ground]) GROUND_IMG[SP[k].ground] = images[SP[k].ground];
   const specs = SP[k].pieces, sorted = [...specs].sort((a, b) => a.z - b.z);
   for (const spec of specs) {
     const src = spec.sign ? signCanvas() : (spec.prefer && images[spec.prefer]) || images[spec.a];
@@ -244,15 +301,21 @@ function buildSpread(k, images) {
   }
   for (const pc of pieces) if (pc.k === k && pc.on) { const host = byId[pc.on[0]]; if (host) pc.baseY = host.g.userData.h * pc.on[1]; }
   for (const pc of pieces) if (pc.k === k && pc.sink) pc.baseY = -pc.g.userData.h * pc.sink;
+  for (const pc of pieces) if (pc.k === k && pc.raise) pc.baseY = pc.raise;
+  for (const pc of pieces) if (pc.k === k && pc.ridge) {   // stand on the summit card: higher near the middle, lower at the edges
+    const host = byId[pc.ridge]; if (!host) continue;
+    const f = Math.abs(pc.x - host.x) / (host.g.userData.w / 2); pc.baseY = host.baseY + host.g.userData.h * Math.max(.38, .72 - .4 * f * f);
+  }
 }
 
-const assetsOf = k => [...new Set(SP[k].pieces.flatMap(s => [s.a, s.prefer]).filter(Boolean))];
+const assetsOf = k => [...new Set([...SP[k].pieces.flatMap(s => [s.a, s.prefer]), PAGES[SP[k].ground] ? null : SP[k].ground].filter(Boolean))];
 // missing files are skipped (art that hasn't been made yet), not fatal
 const loadImages = async names => Object.fromEntries(await Promise.all(names.map(async n => [n, await img(`assets/art/${n}.webp`).catch(() => null)])));
 
 async function build() {
   await Promise.all(['500 40px "Cormorant Garamond"', '600 40px "Cormorant Garamond"', 'italic 40px "IM Fell English"', '40px "Patrick Hand"'].map(f => document.fonts.load(f))).catch(() => {});
   const [im] = await Promise.all([loadImages([...assetsOf(0), 'leaf-green']), room()]);
+  desk().catch(e => console.warn('desk props', e));
   book = makeBook(coverCanvases(im['leaf-green']));
   scene.add(book.root);
   book.backMat.color.setScalar(.62); book.groundMat.color.setScalar(.9);   // the standing page faces the sun; keep its sky from blowing out
@@ -267,7 +330,11 @@ async function build() {
   window.__ready = true;
   // the rest of the book loads in the background, one spread at a time
   for (let k = 1; k < SP.length; k++) {
-    if (k === 6) GOLD_LEAF = await img('assets/art/leaf-gold-hero.webp').catch(() => null);
+    if (k === 6) {
+      GOLD_LEAF = await img('assets/art/leaf-gold-hero.webp').catch(() => null);
+      const fl = await img('assets/art/leaf-gold-1.webp').catch(() => null);
+      if (fl && falling) { const t2 = texOf(fl); falling.material.map = falling.material.emissiveMap = t2; falling.material.needsUpdate = true; }
+    }
     buildSpread(k, await loadImages(assetsOf(k)));
   }
   window.__all = true;
@@ -448,7 +515,7 @@ function frame(p, t) {
 
   cameraAt(p);
   camE.setFromQuaternion(cam.quaternion);
-  dust.userData.update(t); sparkle.userData.update(p);
+  dust.userData.update(t); sparkle.userData.update(p); swim(t);
   post.vig.uniforms.warm.value = .12 + (k === 6 ? .12 : k === 4 ? .08 : 0);
   post.vig.uniforms.amt.value = .35 + out * .25;
   post.bloom.strength = .22 + seg(p, .005, .02) * (1 - seg(p, .03, .05)) * .15 + (k === 6 ? .06 : 0);
